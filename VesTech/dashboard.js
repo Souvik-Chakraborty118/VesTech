@@ -1,4 +1,9 @@
-console.log("Dashboard loaded. Awaiting database connection for live telemetry.");
+const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const JAVA_BACKEND_URL = isLocal 
+    ? 'http://localhost:8080' 
+    : 'https://bingo-java-backend.onrender.com';
+
+console.log("Dashboard loaded. Connected to Java backend:", JAVA_BACKEND_URL);
 
 //DUMMY DATA FOR HISTORY
 let orderHistory = [
@@ -8,7 +13,7 @@ let orderHistory = [
 ];
 
 //REQUEST PICKUP 
-document.getElementById('requestBtn').addEventListener('click', () => {
+document.getElementById('requestBtn').addEventListener('click', async () => {
     const loc = prompt("Enter pickup location (e.g., 'Ward 4'):");
     if (loc) {
         //Generate a random Order ID
@@ -28,6 +33,21 @@ document.getElementById('requestBtn').addEventListener('click', () => {
             time: "Just Now",
             status: "Pending"
         });
+
+        // Send telemetry payload to your live Java backend
+        try {
+            await fetch(`${JAVA_BACKEND_URL}/api/record`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    category: "PICKUP_REQUEST",
+                    confidence: 1.0,
+                    action: `Location: ${loc} [ID: ${newId}]`
+                })
+            });
+        } catch (error) {
+            console.error("Failed to sync telemetry with Java backend:", error);
+        }
 
         alert(`Pickup requested successfully! Tracking ID: ${newId}`);
     }
