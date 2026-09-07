@@ -7,7 +7,7 @@ const isLocal = window.location.hostname === 'localhost' || window.location.host
 //dynamic API URLs
 const AI_BACKEND_URL = isLocal 
     ? 'http://localhost:8000' 
-    : 'https://your-bingo-ai.onrender.com'; // You will replace this with your actual Render URL later
+    : 'https://bingo-backend-0qbr.onrender.com';
 
 //Init camera 
 navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
