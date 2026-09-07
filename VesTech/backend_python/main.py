@@ -6,11 +6,20 @@ import os
 from PIL import Image
 
 app = FastAPI()
-app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+
+# Configure CORS once, right after app is initialized
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "model", "medical_waste_yolov8_best.pt")
 
-model = YOLO(MODEL_PATH) 
+model = YOLO(MODEL_PATH)
 
 @app.post("/api/scan")
 async def scan_waste(image: UploadFile = File(...)):
