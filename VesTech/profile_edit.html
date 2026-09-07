@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BinGo | Edit Profile</title>
+    <link rel="stylesheet" href="profile_edit.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h2>Edit Profile</h2>
+            <p>Update your details</p>
+        </div>
+        <div class="content-area">
+            <div class="card">
+                <form id="profileForm">
+                    <input type="text" id="editName" class="input-field" placeholder="Update Name">
+                    <input type="password" id="editPass" class="input-field" placeholder="New Password">
+                    <button type="submit" class="btn-primary">SAVE CHANGES</button>
+                </form>
+                <button class="btn-secondary" onclick="window.history.back()">GO BACK</button>
+            </div>
+        </div>
+    </div>
+    <script src="profile_edit.js"></script>
+</body>
+</html>
