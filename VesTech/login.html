@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BinGo | Login</title>
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h2>BinGo Portal</h2>
+            <p>Welcome Back</p>
+        </div>
+        <div class="content-area">
+            <form id="loginForm">
+                <input type="email" id="email" class="input-field" required placeholder="Hospital Email">
+                <input type="password" id="password" class="input-field" required placeholder="Password">
+                <select id="role" class="input-field" required>
+                    <option value="DOCTOR_NURSE">Doctor/Nurse</option>
+                    <option value="WASTE_STAFF">Waste Management Staff</option>
+                    <option value="TECHNICIAN">Technician</option>
+                    <option value="ADMIN">Admin</option>
+                </select>
+                <button type="submit" class="btn-primary">LOGIN</button>
+            </form>
+            <div class="switch-auth">
+                New here? <a href="register.html">Register</a>
+            </div>
+            <p class="branding">© Developed by Team VesTech</p>
+        </div>
+    </div>
+    <script src="login.js"></script>
+</body>
+</html>
