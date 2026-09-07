@@ -21,21 +21,23 @@ MODEL_PATH = os.path.join(BASE_DIR, "model", "medical_waste_yolov8_best.pt")
 model = YOLO(MODEL_PATH)
 
 @app.post("/api/scan")
-async def scan_waste(file: UploadFile = File(...)):
+async def scan_waste(file: UploadFile = File(None), image: UploadFile = File(None)):
     try:
-        contents = await file.read()
-        image = Image.open(io.BytesIO(contents)).convert("RGB")
+        # Accept whichever key the frontend sent
+        active_file = file or image
+        if not active_file:
+            return {"error": "No image file provided in request."}
+
+        contents = await active_file.read()
+        image_obj = Image.open(io.BytesIO(contents)).convert("RGB")
         
-        #YOLO inference
-        results = model(image)
+        results = model(image_obj)
         
         category = "Safe Waste"
         confidence = 0.0
         action = "Standard Disposal"
         
-        #bounding boxes were detected
         if len(results[0].boxes) > 0:
-            # Extract the top detection
             best_box = results[0].boxes[0]
             cls_id = int(best_box.cls[0])
             confidence = float(best_box.conf[0])
