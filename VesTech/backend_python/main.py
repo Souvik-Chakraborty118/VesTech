@@ -7,7 +7,6 @@ from PIL import Image
 
 app = FastAPI()
 
-# Configure CORS once, right after app is initialized
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,11 +21,32 @@ MODEL_PATH = os.path.join(BASE_DIR, "model", "medical_waste_yolov8_best.pt")
 model = YOLO(MODEL_PATH)
 
 @app.post("/api/scan")
-async def scan_waste(image: UploadFile = File(...)):
-    img_bytes = await image.read()
-    img = Image.open(io.BytesIO(img_bytes))   
-    results = model(img)
-    top_pred = results[0].probs.top1
-    confidence = float(results[0].probs.top1conf)
-    category = model.names[top_pred]     
-    return {"category": category, "confidence": confidence}
+async def scan_waste(file: UploadFile = File(...)):
+    try:
+        contents = await file.read()
+        image = Image.open(io.BytesIO(contents)).convert("RGB")
+        
+        #YOLO inference
+        results = model(image)
+        
+        category = "Safe Waste"
+        confidence = 0.0
+        action = "Standard Disposal"
+        
+        #bounding boxes were detected
+        if len(results[0].boxes) > 0:
+            # Extract the top detection
+            best_box = results[0].boxes[0]
+            cls_id = int(best_box.cls[0])
+            confidence = float(best_box.conf[0])
+            category = model.names[cls_id]
+            action = f"Handle according to {category} protocol"
+        
+        return {
+            "category": category,
+            "confidence": round(confidence * 100, 2),
+            "action": action
+        }
+        
+    except Exception as e:
+        return {"error": str(e)}
