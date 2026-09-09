@@ -50,7 +50,7 @@ async def scan_waste(file: UploadFile = File(None), image: UploadFile = File(Non
         results = model(image_obj, conf=0.15) 
         
         category = "Safe Waste / Not Recognized"
-        confidence = 9.7
+        confidence = 97
         action = "Standard Disposal"
         
         if len(results[0].boxes) > 0:
