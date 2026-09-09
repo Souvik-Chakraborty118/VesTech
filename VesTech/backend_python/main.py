@@ -13,11 +13,28 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "model", "medical_waste_yolov8_best.pt")
-
 model = YOLO(MODEL_PATH)
+#Biomedical Waste Color Coding Logic
+def assign_waste_bin(detected_class):
+    label = detected_class.lower()
+    
+    #YELLOW
+    if any(x in label for x in ["blood", "organ", "tissue", "cotton", "anatomical", "bandage"]):
+        return "🟡 YELLOW BIN", "Deep Burial / Incineration"   
+    #RED
+    elif any(x in label for x in ["tube", "catheter", "syringe", "iv", "glove", "plastic"]):
+        return "🔴 RED BIN", "Autoclaving & Recycling"      
+    #WHITE
+    elif any(x in label for x in ["needle", "scalpel", "blade", "sharp"]):
+        return "⚪ WHITE BIN", "Puncture-proof container -> Shredding"        
+    #BLUE
+    elif any(x in label for x in ["glass", "vial", "ampoule", "bottle"]):
+        return "🔵 BLUE BIN", "Disinfection & Recycling"      
+    #Default fallback
+    else:
+        return f"Unknown: {detected_class.upper()}", "Manual Inspection Required"
 
 @app.post("/api/scan")
 async def scan_waste(file: UploadFile = File(None), image: UploadFile = File(None)):
@@ -29,29 +46,37 @@ async def scan_waste(file: UploadFile = File(None), image: UploadFile = File(Non
         contents = await active_file.read()
         image_obj = Image.open(io.BytesIO(contents)).convert("RGB")
         
-        #AI inference
-        results = model(image_obj)
-        category = "Safe Waste"
-        confidence = 9.7
+        # Make the AI more sensitive (conf=0.15 means it will report matches it is at least 15% sure of)
+        results = model(image_obj, conf=0.15) 
+        
+        category = "Safe Waste / Not Recognized"
+        confidence = 0.0
         action = "Standard Disposal"
+        
         if len(results[0].boxes) > 0:
             best_box = results[0].boxes[0]
             cls_id = int(best_box.cls[0])
             confidence = float(best_box.conf[0])
-            category = model.names[cls_id]
-            action = f"Handle according to {category} protocol"
-        #DRAW BOUNDING BOXES
+            raw_class_name = model.names[cls_id]
+            
+            #Raw AI name to the official Color Bin
+            category, action = assign_waste_bin(raw_class_name)
+
+        #Draw Bounding Boxes
         annotated_frame = results[0].plot()
-        annotated_frame = annotated_frame[..., ::-1] # Convert BGR to RGB
-        annotated_pil = Image.fromarray(annotated_frame) 
+        annotated_frame = annotated_frame[..., ::-1] # BGR to RGB
+        annotated_pil = Image.fromarray(annotated_frame)
+        
         buffered = io.BytesIO()
         annotated_pil.save(buffered, format="JPEG")
         img_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
+        
         return {
             "category": category,
             "confidence": round(confidence * 100, 2),
             "action": action,
-            "image": img_base64  # Send boxed image to frontend
+            "image": img_base64 
         }
+        
     except Exception as e:
         return {"error": str(e)}
