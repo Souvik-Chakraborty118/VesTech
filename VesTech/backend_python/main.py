@@ -32,7 +32,7 @@ async def scan_waste(file: UploadFile = File(None), image: UploadFile = File(Non
         #AI inference
         results = model(image_obj)
         category = "Safe Waste"
-        confidence = 0.0
+        confidence = 9.7
         action = "Standard Disposal"
         if len(results[0].boxes) > 0:
             best_box = results[0].boxes[0]
