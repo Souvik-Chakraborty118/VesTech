@@ -1,51 +1,72 @@
-const video = document.getElementById('webcam'); 
-const canvas = document.getElementById('canvas'); 
-
-//Auto-Detect Environment 
+const video = document.getElementById('webcam');
+const resultImage = document.getElementById('result-image');
+const scanBtn = document.getElementById('scanBtn');
+const scanLaser = document.getElementById('scan-laser');
+const canvas = document.createElement('canvas');
+//Connection URLs
 const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-//dynamic API URLs
-const AI_BACKEND_URL = isLocal 
-    ? 'http://localhost:8000' 
-    : 'https://bingo-backend-0qbr.onrender.com';
-
-//Init camera 
-navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
-    .then(stream => video.srcObject = stream)
-    .catch(err => alert("Camera access required for AI verification.")); 
-
-document.getElementById('captureBtn').addEventListener('click', () => {
-    const ctx = canvas.getContext('2d');
-    canvas.width = video.videoWidth; 
+const AI_BACKEND_URL = isLocal ? 'http://localhost:8000' : 'https://bingo-backend-0qbr.onrender.com';
+const JAVA_BACKEND_URL = isLocal ? 'http://localhost:8080' : 'https://bingo-java-backend.onrender.com';
+//Start Camera
+navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+    .then(stream => { video.srcObject = stream; })
+    .catch(err => alert("Camera access denied or unavailable."));
+scanBtn.addEventListener('click', () => {
+    //Reset UI to scanning mode
+    scanBtn.innerText = "ANALYZING AI DATA...";
+    scanBtn.disabled = true;
+    scanLaser.style.display = "block"; // Turn on laser
+    resultImage.style.display = "none";
+    video.style.display = "block"; 
+    document.getElementById('res-category').innerText = "Processing...";
+    document.getElementById('res-confidence').innerText = "--";
+    document.getElementById('res-action').innerText = "--";
+    document.getElementById('res-confidence').classList.remove('high-confidence');
+    //Capture Frame
+    canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    ctx.drawImage(video, 0, 0);
-         
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    //Send to Python Backend
     canvas.toBlob(async (blob) => {
         const formData = new FormData();
-        formData.append('image', blob, 'waste.jpg');
+        formData.append('file', blob, 'capture.jpg');
         try {
-            //Use the dynamic URL here instead of hardcoding localhost
-            const res = await fetch(`${AI_BACKEND_URL}/api/scan`, { 
-                method: 'POST', 
-                body: formData 
+            const response = await fetch(`${AI_BACKEND_URL}/api/scan`, {
+                method: 'POST',
+                body: formData
             });
-            
-            const data = await res.json();
-                         
-            document.getElementById('category').innerText = data.category;
-            document.getElementById('confidence').innerText = (data.confidence * 100).toFixed(1);
-                         
-            //Action based on AI confidence
-            if(data.confidence >= 0.95) {
-                document.getElementById('action').innerText = "PROCEED (Automated Segregation)";
-            } else if (data.confidence >= 0.80) {
-                document.getElementById('action').innerText = "RE-SCAN REQUIRED";
-            } else {
-                document.getElementById('action').innerText = "STOP - Human Intervention Required";
+            const data = await response.json();
+            //Update UI with AI Results
+            document.getElementById('res-category').innerText = data.category;
+            document.getElementById('res-confidence').innerText = data.confidence + '%';
+            document.getElementById('res-action').innerText = data.action;
+            if (data.confidence > 50) {
+                document.getElementById('res-confidence').classList.add('high-confidence');
             }
-        } catch (e) {
-            console.error(e);
-            alert("Backend connection failed.");
+            //Show the Bounding Box Image
+            if (data.image) {
+                video.style.display = "none"; // Hide live feed
+                resultImage.src = "data:image/jpeg;base64," + data.image; // Show boxed image
+                resultImage.style.display = "block";
+            }
+            //Send Telemetry to Java Database 
+            if(data.confidence > 0) {
+                fetch(`${JAVA_BACKEND_URL}/api/record`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        category: data.category,
+                        confidence: data.confidence,
+                        action: "AI Logged: " + data.action
+                    })
+                }).catch(err => console.error("Database sync failed", err));
+            }
+        } catch (error) {
+            alert("Scan failed to connect to AI server. Ensure Render is awake.");
+        } finally {
+            scanBtn.innerText = "SCAN NEXT ITEM";
+            scanBtn.disabled = false;
+            scanLaser.style.display = "none"; // Turn off laser
         }
     }, 'image/jpeg');
 });
