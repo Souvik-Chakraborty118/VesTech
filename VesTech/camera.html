@@ -2,20 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>BinGo | AI Scanner</title>
-    <link rel="stylesheet" href="camera.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BinGo AI Scanner</title>
+    <style>
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; } 
+        /* Top Navigation */
+        .top-nav { width: 100%; padding: 15px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; background: rgba(20, 20, 20, 0.9); border-bottom: 1px solid #333; }
+        .back-btn { background: #333; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; text-decoration: none; display: inline-block;}
+        .back-btn:hover { background: #ff4d6d; }
+        .logo { margin: 0; font-size: 1.2rem; color: #00ffcc; text-transform: uppercase; letter-spacing: 2px;}
+        /* Scanner Feed */
+        .scanner-container { position: relative; width: 90%; max-width: 500px; margin: 30px auto; border-radius: 16px; overflow: hidden; border: 3px solid #333; box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); background: #000; aspect-ratio: 3/4;}
+        video, #result-image { width: 100%; height: 100%; object-fit: cover; display: block; } 
+        /* Laser Animation */
+        .scan-laser { position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: #00ffcc; box-shadow: 0 0 15px #00ffcc, 0 0 30px #00ffcc; animation: scan 2s infinite linear; display: none; z-index: 10; }
+        @keyframes scan { 0% { top: 0%; opacity: 0;} 10% {opacity: 1;} 90% {opacity: 1;} 100% { top: 100%; opacity: 0;} }  
+        /* Controls & Results */
+        .controls { text-align: center; margin-bottom: 20px; }
+        .scan-btn { background: linear-gradient(135deg, #ff4d6d 0%, #ff2a55 100%); color: white; font-size: 1.2rem; font-weight: bold; padding: 15px 40px; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 8px 15px rgba(255, 77, 109, 0.4); transition: 0.3s; }
+        .scan-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 20px rgba(255, 77, 109, 0.6); }
+        .scan-btn:disabled { background: #555; box-shadow: none; cursor: not-allowed; transform: none;}
+        .result-panel { width: 90%; max-width: 500px; background: #1e1e1e; border-radius: 12px; padding: 20px; box-sizing: border-box; border-left: 5px solid #00ffcc; margin-bottom: 30px;}
+        .result-panel h3 { margin-top: 0; color: #aaa; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;}
+        .data-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 1.1rem;}
+        .data-row span { color: #888; }
+        .data-row strong { color: #fff; }
+        .high-confidence { color: #00ffcc !important; }
+    </style>
 </head>
 <body>
-    <nav class="navbar"><div class="logo">BinGo Scanner</div><a href="profile_edit.html">Profile</a></nav>
+    <div class="top-nav">
+        <a href="dashboard.html" class="back-btn">&#8592; Dashboard</a>
+        <h2 class="logo">BinGo AI</h2>
+    </div>
+
     <div class="scanner-container">
         <video id="webcam" autoplay playsinline></video>
-        <button id="captureBtn" class="btn-primary">Scan Waste</button>
-        <canvas id="canvas" style="display:none;"></canvas>
-        <div id="resultPanel">
-            <h3>Verification Result</h3>
-            <p>Category: <span id="category">-</span></p>
-            <p>Confidence: <span id="confidence">-</span>%</p>
-            <p>System Action: <span id="action">-</span></p>
+        <img id="result-image" style="display: none;" />
+        <div id="scan-laser" class="scan-laser"></div>
+    </div>
+    <div class="controls">
+        <button id="scanBtn" class="scan-btn">START SCAN</button>
+    </div>
+
+    <div class="result-panel">
+        <h3>Analysis Output</h3>
+        <div class="data-row">
+            <span>Category:</span>
+            <strong id="res-category">Waiting...</strong>
+        </div>
+        <div class="data-row">
+            <span>Confidence:</span>
+            <strong id="res-confidence">--</strong>
+        </div>
+        <div class="data-row">
+            <span>System Action:</span>
+            <strong id="res-action">--</strong>
         </div>
     </div>
     <script src="camera.js"></script>
