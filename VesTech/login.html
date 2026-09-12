@@ -31,7 +31,7 @@
             <h1>Welcome Back</h1>
             <p class="subtitle">Sign in to the BinGo Portal</p>
             
-            <form action="dashboard.html">
+            <form id="authForm" onsubmit="handleAuth(event)">
                 <div class="input-group">
                     <label>Hospital Email</label>
                     <span class="icon">✉️</span>
@@ -61,5 +61,12 @@
         <p>Next-generation automated AI waste classification and routing.</p>
         <p class="copyright">© Developed by Team VesTech.</p>
     </footer>
+    <script>
+        function handleAuth(event) {
+            event.preventDefault();
+            localStorage.setItem('isAuthenticated', 'true');
+            window.location.href = 'dashboard.html';
+        }
+    </script>
 </body>
 </html>
