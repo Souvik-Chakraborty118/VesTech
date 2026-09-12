@@ -3,35 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BinGo | Register</title>
+    <title>Create Account | VesTech BinGo</title>
     <link rel="stylesheet" href="register.css">
 </head>
 <body>
-    <div class="app-container">
-        <div class="header">
-            <h2>BinGo</h2>
-            <p>Create your account</p>
-        </div>
-        <div class="content-area">
-            <form id="registerForm">
-                <input type="text" id="fullName" class="input-field" required placeholder="Full Name">
-                <input type="email" id="email" class="input-field" required placeholder="Hospital Email">
-                <input type="password" id="password" class="input-field" required placeholder="Password">
-                <select id="role" class="input-field" required>
-                    <option value="" disabled selected>Select Role...</option>
-                    <option value="DOCTOR_NURSE">Doctor/Nurse</option>
-                    <option value="WASTE_STAFF">Waste Mgmt Staff</option>
-                    <option value="TECHNICIAN">Technician</option>
-                    <option value="ADMIN">Admin</option>
-                </select>
-                <button type="submit" class="btn-primary">CREATE ACCOUNT</button>
-            </form>
-            <div class="switch-auth">
-                Already signed up? <a href="login.html">Login</a>
+    <nav class="navbar">
+        <a href="index.html" class="brand-section">
+            <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo">
+            <div class="brand-text">
+                <h2>VesTech <span>BinGo</span></h2>
+                <p>AI Waste Segregation</p>
             </div>
-            <p class="branding">© Developed by Team VesTech</p>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="dashboard.html">Command Center</a>
+            <a href="#">Technology</a>
+        </div>
+        <div class="auth-group">
+            <a href="login.html" class="text-link">Login</a>
+            <a href="register.html" class="btn-teal">Register Portal</a>
+        </div>
+    </nav>
+
+    <div class="page-container">
+        <div class="auth-card">
+            <h1>Create Account</h1>
+            <p class="subtitle">Deploy BinGo AI Waste Node in your Ward</p>
+            
+            <form action="#">
+                <div class="input-group">
+                    <label>Full Name</label>
+                    <span class="icon">👤</span>
+                    <input type="text" placeholder="Dr. VesTech Member">
+                </div>
+                <div class="input-group">
+                    <label>Hospital Email</label>
+                    <span class="icon">✉️</span>
+                    <input type="email" placeholder="member@hospital.org">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <span class="icon">🔒</span>
+                    <input type="password" placeholder="Create strong password">
+                </div>
+                <div class="input-group">
+                    <label>Select Role</label>
+                    <span class="icon">🩺</span>
+                    <select>
+                        <option>Select your clinical rank...</option>
+                        <option>Doctor / Surgeon</option>
+                        <option>Head Nurse</option>
+                        <option>Sanitation Staff</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-teal btn-full">Create Account</button>
+            </form>
+            <a href="login.html" class="auth-link">Already signed up? <span>Login instead</span></a>
         </div>
     </div>
-    <script src="register.js"></script>
+
+    <footer>
+        <h3>BinGo <span>Platform</span></h3>
+        <p>Next-generation automated AI waste classification and routing.</p>
+        <p class="copyright">© Developed by Team VesTech. All medical standards compliant.</p>
+    </footer>
 </body>
 </html>
