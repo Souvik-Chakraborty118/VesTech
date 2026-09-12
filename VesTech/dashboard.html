@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Command Center | VesTech BinGo</title>
     <link rel="stylesheet" href="dashboard.css">
+    
+    <!-- AUTHENTICATION ROUTE GUARD -->
+    <script>
+        if (localStorage.getItem('isAuthenticated') !== 'true') {
+            window.location.href = 'login.html';
+        }
+    </script>
 </head>
 <body>
     
