@@ -31,7 +31,7 @@
             <h1>Create Account</h1>
             <p class="subtitle">Deploy BinGo AI Waste Node in your Ward</p>
             
-            <form action="#">
+            <form id="authForm" onsubmit="handleAuth(event)">
                 <div class="input-group">
                     <label>Full Name</label>
                     <span class="icon">👤</span>
@@ -68,5 +68,12 @@
         <p>Next-generation automated AI waste classification and routing.</p>
         <p class="copyright">© Developed by Team VesTech. All medical standards compliant.</p>
     </footer>
+    <script>
+        function handleAuth(event) {
+            event.preventDefault(); 
+            localStorage.setItem('isAuthenticated', 'true');
+            window.location.href = 'dashboard.html';
+        }
+    </script>
 </body>
 </html>
