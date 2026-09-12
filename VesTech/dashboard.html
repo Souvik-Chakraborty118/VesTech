@@ -7,6 +7,8 @@
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
+    
+    <!-- TOP NAVBAR -->
     <nav class="navbar">
         <a href="index.html" class="brand-section">
             <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo">
@@ -20,12 +22,16 @@
             <a href="dashboard.html" style="color:#0d9488; border-bottom:2px solid #0d9488;">Command Center</a>
             <a href="#">Technology</a>
         </div>
+        
+        <!-- UPDATED NAV: History, Profile, Camera -->
         <div class="auth-group">
+            <button id="historyBtn" class="text-link" style="background:none; border:none; cursor:pointer; font-family:'Inter';">Order History</button>
             <a href="profile_edit.html" class="text-link">Profile</a>
-            <button id="historyBtn" class="btn-teal">Order History</button>
+            <a href="camera.html" class="btn-teal">📷 AI Scanner</a>
         </div>
     </nav>
 
+    <!-- DASHBOARD CONTAINER -->
     <div class="dashboard-container">
         
         <!-- Telemetry Header -->
@@ -86,11 +92,10 @@
             <!-- Quick Actions -->
             <div class="actions-card">
                 <h3>Quick Actions</h3>
-                <button id="requestBtn" class="action-btn btn-teal"> Request Pickup</button>
-                <button id="dispatchBtn" class="action-btn btn-outline"> Force Dispatch Robot</button>
-                <button id="stopBtn" class="action-btn btn-danger"> Emergency Stop System</button>
+                <button id="requestBtn" class="action-btn btn-teal">🎯 Request Pickup</button>
+                <button id="dispatchBtn" class="action-btn btn-outline">🚀 Force Dispatch Robot</button>
+                <button id="stopBtn" class="action-btn btn-danger">🛑 Emergency Stop System</button>
             </div>
-            
         </div>
     </div>
 
@@ -108,7 +113,6 @@
         <p class="copyright">© Developed by Team VesTech. All medical standards compliant.</p>
     </footer>
 
-    <!-- Hooks up to your existing logic -->
     <script src="dashboard.js"></script> 
 </body>
 </html>
