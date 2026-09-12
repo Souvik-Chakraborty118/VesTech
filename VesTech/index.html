@@ -7,25 +7,47 @@
     <link rel="stylesheet" href="index.css">
 </head>
 <body>
+    
+    <!-- TOP NAVBAR -->
     <nav class="navbar">
-        <div class="logo">VesTech | BinGo</div>
+        <a href="index.html" class="brand-section">
+            <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo">
+            <div class="brand-text">
+                <h2>VesTech <span>BinGo</span></h2>
+                <p>AI Waste Segregation</p>
+            </div>
+        </a>
         <div class="nav-links">
-            <a href="login.html" class="nav-link">Login</a>
-            <a href="register.html" class="btn-primary-small">Register</a>
+            <a href="index.html" class="active">Home</a>
+            <a href="dashboard.html">Command Center</a>
+            <a href="#">Technology</a>
+        </div>
+        <div class="auth-group">
+            <a href="login.html" class="text-link">Login</a>
+            <a href="register.html" class="btn-teal">Register Portal</a>
         </div>
     </nav>
-    
+
+    <!-- CLINICAL HERO SECTION -->
     <main class="hero-section">
-        <div class="glass-card">
-            <div class="neon-badge">AI POWERED</div>
+        <div class="clinical-card">
+            <div class="teal-badge">AI POWERED</div>
             <h1>Smart Biomedical<br>Waste Segregation</h1>
-            <p>BinGo uses YOLOv8 AI to visually classify and autonomously segregate medical waste into proper compartments.</p>
+            <p>BinGo uses YOLOv8 AI to visually classify and autonomously segregate medical waste into proper compartments, ensuring 100% compliance with BMW guidelines.</p>
             
             <div class="action-buttons">
-                <button id="getStartedBtn" class="btn-primary">START SCANNING</button>
+                <!-- Connects to index.js to redirect to camera.html -->
+                <button id="getStartedBtn" class="btn-teal-large">Initialize AI Scanner</button>
             </div>
         </div>
     </main>
+
+    <!-- FOOTER -->
+    <footer>
+        <h3>BinGo <span>Platform</span></h3>
+        <p>Next-generation automated AI waste classification and routing.</p>
+        <p class="copyright">© Developed by Team VesTech. All medical standards compliant.</p>
+    </footer>
 
     <script src="index.js"></script>
 </body>
