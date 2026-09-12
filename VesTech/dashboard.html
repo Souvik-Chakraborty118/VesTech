@@ -3,96 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BinGo | Command Center</title>
+    <title>Command Center | VesTech BinGo</title>
     <link rel="stylesheet" href="dashboard.css">
 </head>
 <body>
-
-    <!-- Sticky Glass Navbar -->
     <nav class="navbar">
-        <div class="logo">BinGo Command</div>
+        <a href="index.html" class="brand-section">
+            <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo">
+            <div class="brand-text">
+                <h2>VesTech <span>BinGo</span></h2>
+                <p>AI Waste Segregation</p>
+            </div>
+        </a>
         <div class="nav-links">
-            <a href="camera.html">📷</a>
-            <a id="historyBtn">📜</a>
-            <a href="profile_edit.html">👤</a>
+            <a href="index.html">Home</a>
+            <a href="dashboard.html" style="color:#0d9488; border-bottom:2px solid #0d9488;">Command Center</a>
+            <a href="#">Technology</a>
+        </div>
+        <div class="auth-group">
+            <a href="profile_edit.html" class="text-link">Profile</a>
+            <button id="historyBtn" class="btn-teal">Order History</button>
         </div>
     </nav>
 
-    <div class="dashboard-wrapper">
+    <div class="dashboard-container">
         
-        <!-- Live System Status Banner -->
-        <div class="status-bar">
-            <div class="status-info">
-                <h2>System Telemetry</h2>
-                <p>Monitoring AI Node & Smart Bins</p>
+        <!-- Telemetry Header -->
+        <div class="telemetry-header">
+            <div>
+                <h1>System Telemetry</h1>
+                <p>Monitoring active YOLOv8 AI Nodes & Smart Bins across ICU and Wards</p>
             </div>
-            <div class="live-indicator">
-                <div class="dot"></div> ONLINE
-            </div>
-        </div>
-
-        <!-- Card Metrics Grid -->
-        <div class="dashboard-grid">
-            <div class="card">
-                <h3>Battery Level</h3>
-                <h1 id="battery" class="highlight-yellow">85%</h1>
-            </div>
-            <div class="card">
-                <h3>Bag Stock</h3>
-                <h1 id="bags">42</h1>
-            </div>
-            <div class="card">
-                <h3>Yellow Bin (Bio)</h3>
-                <p id="yellow-weight">560g <span style="color:#8D99AE; font-size:14px;">/ 1000g</span></p>
-            </div>
-            <!-- Pulsing Critical Card -->
-            <div class="card critical">
-                <h3>Red Bin (Hazard)</h3>
-                <p id="red-weight">990g <span style="opacity:0.7; font-size:14px;">/ 1000g</span></p>
-                <p class="critical-text">⚠️ CAPACITY CRITICAL</p>
+            <div class="live-status">
+                <span class="dot"></span> ONLINE
             </div>
         </div>
 
-        <!-- Active Order & Controls -->
+        <!-- 4-Column Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-title">Battery Level <span>🔋</span></div>
+                <div class="stat-value">85% <span class="subtext">Stable power</span></div>
+            </div>
+            
+            <div class="stat-card">
+                <div class="stat-title">Bag Stock <span>📦</span></div>
+                <div class="stat-value">42 <span class="subtext">Rolls remaining</span></div>
+            </div>
+
+            <div class="stat-card border-yellow">
+                <div class="stat-title">Yellow Bin (Bio) <span>🟡</span></div>
+                <div class="stat-value">560g <span class="subtext">/ 3KG capacity</span></div>
+                <div class="progress-bar"><div class="fill-yellow" style="width: 18%;"></div></div>
+            </div>
+
+            <div class="stat-card border-red critical">
+                <div class="stat-title">Red Bin (Hazard) <span>🔴</span></div>
+                <div class="stat-value" id="red-weight">2990g <span class="subtext">/ 3KG max</span></div>
+                <div class="progress-bar"><div class="fill-red" style="width: 98%;"></div></div>
+                <div class="alert-text">⚠️ CAPACITY CRITICAL</div>
+            </div>
+        </div>
+
+        <!-- 2-Column Bottom Grid -->
         <div class="bottom-grid">
-            <!-- Order Tracking Card -->
-            <div class="card">
-                <h3>Active Collection Order</h3>
-                <h1 id="activeOrderId" style="margin-bottom: 15px;">#ORD-9482-MED</h1>
+            
+            <!-- Active Order -->
+            <div class="order-card">
+                <div class="order-header">
+                    <span class="label">ACTIVE COLLECTION ORDER</span>
+                    <span class="badge" id="activeStatus">EN ROUTE</span>
+                </div>
+                <h2 id="activeOrderId">#ORD-9482-MED</h2>
+                
                 <div class="order-details">
-                    <p><strong>Assigned To:</strong> <span id="activeRobot">Robot Unit Alpha-1</span></p>
-                    <p><strong>Target Location:</strong> <span id="activeLocation">Ward 3 - ICU</span></p>
-                    <p><strong>Status:</strong> <span id="activeStatus">In route for pickup</span></p>
-                    <p><strong>ETA:</strong> <span id="activeEta">4 mins</span></p>
+                    <div class="detail-row"><span>🤖 Assigned Unit</span> <strong id="activeRobot">Robot Unit Alpha-1</strong></div>
+                    <div class="detail-row"><span>📍 Target Location</span> <strong id="activeLocation">Ward 3 - ICU</strong></div>
+                    <div class="detail-row"><span>⏱️ Estimated Arrival</span> <strong id="activeEta">4 mins</strong></div>
                 </div>
             </div>
 
-            <!-- Quick Actions Card -->
-            <div class="card">
+            <!-- Quick Actions -->
+            <div class="actions-card">
                 <h3>Quick Actions</h3>
-                <div style="margin-top: 15px;">
-                    <button id="requestBtn" class="btn-action btn-request">📦 Request Pickup</button>
-                    <button id="dispatchBtn" class="btn-action btn-dispatch">🚀 Force Dispatch</button>
-                    <button id="stopBtn" class="btn-action btn-stop">🛑 Emergency Stop</button>
-                </div>
+                <button id="requestBtn" class="action-btn btn-teal"> Request Pickup</button>
+                <button id="dispatchBtn" class="action-btn btn-outline"> Force Dispatch Robot</button>
+                <button id="stopBtn" class="action-btn btn-danger"> Emergency Stop System</button>
             </div>
+            
         </div>
-
     </div>
 
-    <!-- ORDER HISTORY MODAL-->
-    <div class="modal-overlay" id="historyModal">
+    <!-- History Modal -->
+    <div id="historyModal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2>Order History</h2>
-                <button class="close-btn" id="closeModal">×</button>
-            </div>
-            <div class="history-list" id="historyList">
-                <!-- Javascript will populate this list -->
-            </div>
+            <span id="closeModal" class="close">&times;</span>
+            <h2>Order History</h2>
+            <div id="historyList"></div>
         </div>
     </div>
 
-    <script src="dashboard.js"></script>
+    <footer>
+        <h3>BinGo <span>Platform</span></h3>
+        <p class="copyright">© Developed by Team VesTech. All medical standards compliant.</p>
+    </footer>
+
+    <!-- Hooks up to your existing logic -->
+    <script src="dashboard.js"></script> 
 </body>
 </html>
