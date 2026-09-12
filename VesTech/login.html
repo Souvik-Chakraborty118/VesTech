@@ -3,33 +3,63 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BinGo | Login</title>
+    <title>Login | VesTech BinGo</title>
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
-    <div class="app-container">
-        <div class="header">
-            <h2>BinGo Portal</h2>
-            <p>Welcome Back</p>
-        </div>
-        <div class="content-area">
-            <form id="loginForm">
-                <input type="email" id="email" class="input-field" required placeholder="Hospital Email">
-                <input type="password" id="password" class="input-field" required placeholder="Password">
-                <select id="role" class="input-field" required>
-                    <option value="DOCTOR_NURSE">Doctor/Nurse</option>
-                    <option value="WASTE_STAFF">Waste Management Staff</option>
-                    <option value="TECHNICIAN">Technician</option>
-                    <option value="ADMIN">Admin</option>
-                </select>
-                <button type="submit" class="btn-primary">LOGIN</button>
-            </form>
-            <div class="switch-auth">
-                New here? <a href="register.html">Register</a>
+    <nav class="navbar">
+        <a href="index.html" class="brand-section">
+            <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo">
+            <div class="brand-text">
+                <h2>VesTech <span>BinGo</span></h2>
+                <p>AI Waste Segregation</p>
             </div>
-            <p class="branding">© Developed by Team VesTech</p>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="dashboard.html">Command Center</a>
+            <a href="#">Technology</a>
+        </div>
+        <div class="auth-group">
+            <a href="login.html" class="text-link" style="color: #0d9488;">Login</a>
+            <a href="register.html" class="btn-teal">Register Portal</a>
+        </div>
+    </nav>
+
+    <div class="page-container">
+        <div class="auth-card">
+            <h1>Welcome Back</h1>
+            <p class="subtitle">Sign in to the BinGo Portal</p>
+            
+            <form action="dashboard.html">
+                <div class="input-group">
+                    <label>Hospital Email</label>
+                    <span class="icon">✉️</span>
+                    <input type="email" placeholder="doctor@hospital.org">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <span class="icon">🔒</span>
+                    <input type="password" placeholder="••••••••••••">
+                </div>
+                <div class="input-group">
+                    <label>Your Role</label>
+                    <span class="icon">🩺</span>
+                    <select>
+                        <option>Doctor / Nurse</option>
+                        <option>Sanitation Staff</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-teal btn-full">Login</button>
+            </form>
+            <a href="register.html" class="auth-link">New here? <span>Register Account</span></a>
         </div>
     </div>
-    <script src="login.js"></script>
+
+    <footer>
+        <h3>BinGo <span>Platform</span></h3>
+        <p>Next-generation automated AI waste classification and routing.</p>
+        <p class="copyright">© Developed by Team VesTech.</p>
+    </footer>
 </body>
 </html>
