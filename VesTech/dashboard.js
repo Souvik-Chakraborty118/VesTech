@@ -1,5 +1,5 @@
 //Authentication Route Guard (Runs immediately)
-if (localStorage.getItem('isAuthenticated') !== 'true') {
+if (sessionStorage.getItem('isAuthenticated') !== 'true') {
     window.location.href = 'login.html';
 }
 
