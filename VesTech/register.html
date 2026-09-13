@@ -29,47 +29,46 @@
     <div class="page-container">
         <div class="auth-card">
             <h1>Create Account</h1>
-            <p class="subtitle">Deploy BinGo AI Bot in your Ward</p>
+            <p class="subtitle">Deploy BinGo AI Waste Node in your Ward</p>
             
-            <form id="authForm" onsubmit="handleAuth(event)">
-                <!-- Split Name Row -->
+            <form id="authForm" onsubmit="handleRegister(event)">
                 <div class="form-row">
                     <div class="input-group">
                         <label>First Name</label>
                         <span class="icon">👤</span>
-                        <input type="text" placeholder="First Name" required>
+                        <input type="text" id="regFirst" placeholder="First Name" required>
                     </div>
                     <div class="input-group">
                         <label>Last Name</label>
                         <span class="icon">👤</span>
-                        <input type="text" placeholder="Last Name" required>
+                        <input type="text" id="regLast" placeholder="Last Name" required>
                     </div>
                 </div>
 
                 <div class="input-group">
                     <label>Email</label>
                     <span class="icon">✉️</span>
-                    <input type="email" placeholder="Enter your email" required>
+                    <input type="email" id="regEmail" placeholder="Enter your email" required>
                 </div>
 
                 <div class="input-group">
                     <label>Password</label>
                     <span class="icon">🔒</span>
-                    <input type="password" placeholder="Create strong password" required>
+                    <input type="password" id="regPass" placeholder="Create strong password" required>
                 </div>
 
                 <div class="input-group">
                     <label>Select Role</label>
                     <span class="icon">🩺</span>
-                    <select required>
+                    <select id="regRole" required>
                         <option value="" disabled selected>Select your clinical rank...</option>
-                        <option>Doctor</option>
-                        <option>Nurse</option>
-                        <option>Waste Management Staff</option>
+                        <option value="Doctor">Doctor</option>
+                        <option value="Nurse">Nurse</option>
+                        <option value="Waste Management Staff">Waste Management Staff</option>
                     </select>
                 </div>
                 
-                <button type="submit" class="btn-teal btn-full">Create Account</button>
+                <button type="submit" class="btn-teal btn-full" id="regSubmitBtn">Create Account</button>
             </form>
             <a href="login.html" class="auth-link">Already signed up? <span>Login instead</span></a>
         </div>
@@ -82,10 +81,41 @@
     </footer>
 
     <script>
-        function handleAuth(event) {
+        const JAVA_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:8080' : 'https://bingo-java-backend.onrender.com';
+
+        async function handleRegister(event) {
             event.preventDefault(); 
-            localStorage.setItem('isAuthenticated', 'true');
-            window.location.href = 'dashboard.html';
+            const btn = document.getElementById('regSubmitBtn');
+            btn.innerText = "Connecting to Database...";
+            
+            const payload = {
+                firstName: document.getElementById('regFirst').value,
+                lastName: document.getElementById('regLast').value,
+                email: document.getElementById('regEmail').value,
+                password: document.getElementById('regPass').value,
+                role: document.getElementById('regRole').value
+            };
+
+            try {
+                const response = await fetch(`${JAVA_URL}/api/auth/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    localStorage.setItem('isAuthenticated', 'true');
+                    window.location.href = 'dashboard.html';
+                } else {
+                    const errMsg = await response.text();
+                    alert("Registration Failed: " + errMsg);
+                }
+            } catch (err) {
+                alert("Error connecting to Neon SQL Database.");
+            } finally {
+                btn.innerText = "Create Account";
+            }
         }
     </script>
 </body>
