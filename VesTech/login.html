@@ -21,7 +21,6 @@
             <a href="technology.html">Technology</a>
         </div>
         <div class="auth-group">
-            <!-- Login is Green here, Register is plain text -->
             <a href="login.html" class="btn-teal">Login</a>
             <a href="register.html" class="text-link">Register</a>
         </div>
@@ -32,28 +31,28 @@
             <h1>Welcome Back</h1>
             <p class="subtitle">Sign in to the BinGo Portal</p>
             
-            <form id="authForm" onsubmit="handleAuth(event)">
+            <form id="authForm" onsubmit="handleLogin(event)">
                 <div class="input-group">
                     <label>Email</label>
                     <span class="icon">✉️</span>
-                    <input type="email" placeholder="Enter your email" required>
+                    <input type="email" id="loginEmail" placeholder="Enter your email" required>
                 </div>
                 <div class="input-group">
                     <label>Password</label>
                     <span class="icon">🔒</span>
-                    <input type="password" placeholder="••••••••••••" required>
+                    <input type="password" id="loginPass" placeholder="••••••••••••" required>
                 </div>
                 <div class="input-group">
                     <label>Your Role</label>
                     <span class="icon">🩺</span>
-                    <select required>
+                    <select id="loginRole" required>
                         <option value="" disabled selected>Select your clinical rank...</option>
-                        <option>Doctor</option>
-                        <option>Nurse</option>
-                        <option>Waste Management Staff</option>
+                        <option value="Doctor">Doctor</option>
+                        <option value="Nurse">Nurse</option>
+                        <option value="Waste Management Staff">Waste Management Staff</option>
                     </select>
                 </div>
-                <button type="submit" class="btn-teal btn-full">Login</button>
+                <button type="submit" class="btn-teal btn-full" id="loginSubmitBtn">Login</button>
             </form>
             <a href="register.html" class="auth-link">New here? <span>Register Account</span></a>
         </div>
@@ -66,10 +65,37 @@
     </footer>
 
     <script>
-        function handleAuth(event) {
+        const JAVA_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? 'http://localhost:8080' : 'https://bingo-java-backend.onrender.com';
+
+        async function handleLogin(event) {
             event.preventDefault();
-            localStorage.setItem('isAuthenticated', 'true');
-            window.location.href = 'dashboard.html';
+            const btn = document.getElementById('loginSubmitBtn');
+            btn.innerText = "Authenticating...";
+
+            const payload = {
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPass').value
+            };
+
+            try {
+                const response = await fetch(`${JAVA_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    localStorage.setItem('isAuthenticated', 'true');
+                    window.location.href = 'dashboard.html';
+                } else {
+                    alert("Authentication Error: ID not found or incorrect password.");
+                }
+            } catch (err) {
+                alert("Error connecting to Neon SQL Database.");
+            } finally {
+                btn.innerText = "Login";
+            }
         }
     </script>
 </body>
