@@ -40,3 +40,4 @@ async function handleRegister(event) {
         btn.innerText = "Create Account";
     }
 }
+document.getElementById('authForm').addEventListener('submit', handleRegister);
