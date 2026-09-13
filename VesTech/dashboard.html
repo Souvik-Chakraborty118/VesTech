@@ -100,5 +100,51 @@
             </div>
         </div>
     </div>
+<!-- History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content">
+            <span id="closeModal" class="close">&times;</span>
+            <h2>Order History</h2>
+            <div id="historyList"></div>
+        </div>
+    </div>
+
+    <!-- Request Pickup Modal -->
+    <div id="pickupModal" class="modal">
+        <div class="modal-content">
+            <span id="closePickupModal" class="close">&times;</span>
+            <h2 style="margin-bottom: 5px;">Request Manual Pickup</h2>
+            <p style="color: #64748b; font-size: 0.9rem; margin-bottom: 20px;">Dispatch an AI node to a specific location.</p>
+            
+            <form id="pickupForm">
+                <div class="input-group">
+                    <label>Target Location</label>
+                    <select id="pickupLocation" required>
+                        <option value="" disabled selected>Select Ward...</option>
+                        <option value="Ward 1 - General">Ward 1 - General</option>
+                        <option value="Ward 2 - Maternity">Ward 2 - Maternity</option>
+                        <option value="Ward 3 - ICU">Ward 3 - ICU</option>
+                        <option value="Operation Theatre">Operation Theatre</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Target Bin</label>
+                    <select id="pickupBin" required>
+                        <option value="" disabled selected>Select Bin Type...</option>
+                        <option value="Yellow Bin (Bio)">Yellow Bin (Bio)</option>
+                        <option value="Red Bin (Hazard)">Red Bin (Hazard)</option>
+                        <option value="White Bin (Sharps)">White Bin (Sharps)</option>
+                        <option value="Blue Bin (Glass)">Blue Bin (Glass)</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-teal btn-full" style="margin-top:10px;">Dispatch Robot Node</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <h3>BinGo</h3>
+        <p class="copyright">© Developed by Team VesTech. All medical standards compliant.</p>
+    </footer>
 </body>
 </html>
