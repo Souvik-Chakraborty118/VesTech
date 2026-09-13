@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Command Center | VesTech BinGo</title>
+    <title>Command Center | BinGo</title>
     <link rel="stylesheet" href="dashboard.css">
-    
-    <!-- AUTHENTICATION ROUTE GUARD -->
     <script>
         if (localStorage.getItem('isAuthenticated') !== 'true') {
             window.location.href = 'login.html';
@@ -14,23 +12,19 @@
     </script>
 </head>
 <body>
-    
-    <!-- TOP NAVBAR -->
     <nav class="navbar">
         <a href="index.html" class="brand-section">
             <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo">
             <div class="brand-text">
                 <h2>BinGo</h2>
-                <p>    by VesTech</p>
+                <p>by VesTech</p>
             </div>
         </a>
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="dashboard.html" style="color:#0d9488; border-bottom:2px solid #0d9488;">Command Center</a>
-            <a href="#">Technology</a>
+            <a href="technology.html">Technology</a> <!-- FIXED LINK -->
         </div>
-        
-        <!-- UPDATED NAV: History, Profile, Camera -->
         <div class="auth-group">
             <button id="historyBtn" class="text-link" style="background:none; border:none; cursor:pointer; font-family:'Inter';">Order History</button>
             <a href="profile_edit.html" class="text-link">Profile</a>
@@ -38,88 +32,120 @@
         </div>
     </nav>
 
-    <!-- DASHBOARD CONTAINER -->
     <div class="dashboard-container">
-        
-        <!-- Telemetry Header -->
         <div class="telemetry-header">
             <div>
                 <h1>System Telemetry</h1>
                 <p>Monitoring active YOLOv8 AI Nodes & Smart Bins across ICU and Wards</p>
             </div>
-            <div class="live-status">
-                <span class="dot"></span> ONLINE
-            </div>
+            <div class="live-status"><span class="dot"></span> ONLINE</div>
         </div>
 
-        <!-- Column Stats Grid -->
+        <!-- 6-Card Grid (Includes all 4 Bins) -->
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-title">Battery Level <span>🔋</span></div>
                 <div class="stat-value">85% <span class="subtext">Stable power</span></div>
             </div>
-            
             <div class="stat-card">
                 <div class="stat-title">Bag Stock <span>📦</span></div>
                 <div class="stat-value">42 <span class="subtext">Rolls remaining</span></div>
             </div>
 
-            <div class="stat-card border-yellow">
+            <!-- The 4 Bins -->
+            <div class="stat-card" id="yellow-card">
                 <div class="stat-title">Yellow Bin (Bio) <span>🟡</span></div>
-                <div class="stat-value">560g <span class="subtext">/ 3KG capacity</span></div>
-                <div class="progress-bar"><div class="fill-yellow" style="width: 18%;"></div></div>
+                <div class="stat-value" id="yellow-weight">--g <span class="subtext">/ 3KG max</span></div>
+                <div class="progress-bar"><div id="yellow-bar"></div></div>
+                <div id="yellow-alert" class="alert-text">--</div>
             </div>
 
-            <div class="stat-card border-red critical">
+            <div class="stat-card" id="red-card">
                 <div class="stat-title">Red Bin (Hazard) <span>🔴</span></div>
-                <div class="stat-value" id="red-weight">2990g <span class="subtext">/ 3KG max</span></div>
-                <div class="progress-bar"><div class="fill-red" style="width: 98%;"></div></div>
-                <div class="alert-text">⚠️ CAPACITY CRITICAL</div>
+                <div class="stat-value" id="red-weight">--g <span class="subtext">/ 3KG max</span></div>
+                <div class="progress-bar"><div id="red-bar"></div></div>
+                <div id="red-alert" class="alert-text">--</div>
+            </div>
+
+            <div class="stat-card" id="white-card">
+                <div class="stat-title">White Bin (Sharps) <span>⚪</span></div>
+                <div class="stat-value" id="white-weight">--g <span class="subtext">/ 3KG max</span></div>
+                <div class="progress-bar"><div id="white-bar"></div></div>
+                <div id="white-alert" class="alert-text">--</div>
+            </div>
+
+            <div class="stat-card" id="blue-card">
+                <div class="stat-title">Blue Bin (Glass) <span>🔵</span></div>
+                <div class="stat-value" id="blue-weight">--g <span class="subtext">/ 3KG max</span></div>
+                <div class="progress-bar"><div id="blue-bar"></div></div>
+                <div id="blue-alert" class="alert-text">--</div>
             </div>
         </div>
 
-        <!-- Column Bottom Grid -->
         <div class="bottom-grid">
-            
-            <!-- Active Order -->
             <div class="order-card">
                 <div class="order-header">
                     <span class="label">ACTIVE COLLECTION ORDER</span>
                     <span class="badge" id="activeStatus">EN ROUTE</span>
                 </div>
                 <h2 id="activeOrderId">#ORD-9482-MED</h2>
-                
                 <div class="order-details">
                     <div class="detail-row"><span>🤖 Assigned Unit</span> <strong id="activeRobot">Robot Unit Alpha-1</strong></div>
                     <div class="detail-row"><span>📍 Target Location</span> <strong id="activeLocation">Ward 3 - ICU</strong></div>
                     <div class="detail-row"><span>⏱️ Estimated Arrival</span> <strong id="activeEta">4 mins</strong></div>
                 </div>
             </div>
-
-            <!-- Quick Actions -->
             <div class="actions-card">
                 <h3>Quick Actions</h3>
-                <button id="requestBtn" class="action-btn btn-teal"> Request Pickup</button>
-                <button id="dispatchBtn" class="action-btn btn-outline"> Force Dispatch Robot</button>
-                <button id="stopBtn" class="action-btn btn-danger"> Emergency Stop System</button>
+                <button class="action-btn btn-teal">🎯 Request Pickup</button>
+                <button class="action-btn btn-outline">🚀 Force Dispatch</button>
+                <button class="action-btn btn-danger">🛑 Emergency Stop</button>
             </div>
         </div>
     </div>
 
-    <!-- History Modal -->
-    <div id="historyModal" class="modal">
-        <div class="modal-content">
-            <span id="closeModal" class="close">&times;</span>
-            <h2>Order History</h2>
-            <div id="historyList"></div>
-        </div>
-    </div>
+    <!-- Capacity Logic Script -->
+    <script>
+        function updateBinCapacity(binPrefix, currentGrams) {
+            const maxGrams = 3000;
+            const percentage = Math.min((currentGrams / maxGrams) * 100, 100);
+            
+            // Update Text
+            document.getElementById(`${binPrefix}-weight`).innerHTML = `${currentGrams}g <span class="subtext">/ 3KG max</span>`;
+            
+            const bar = document.getElementById(`${binPrefix}-bar`);
+            const alertText = document.getElementById(`${binPrefix}-alert`);
+            const card = document.getElementById(`${binPrefix}-card`);
 
-    <footer>
-        <h3>BinGo</h3>
-        <p class="copyright">© Developed by Team VesTech. All medical standards compliant.</p>
-    </footer>
+            // Clear old classes
+            bar.className = '';
+            alertText.className = 'alert-text';
+            card.classList.remove('critical');
 
-    <script src="dashboard.js"></script> 
+            // Apply Logic
+            if (percentage <= 70) {
+                bar.classList.add('fill-green');
+                alertText.classList.add('text-optimal');
+                alertText.innerText = 'OPTIMAL';
+            } else if (percentage <= 89) {
+                bar.classList.add('fill-yellow');
+                alertText.classList.add('text-nearing');
+                alertText.innerText = 'NEARING CAPACITY';
+            } else {
+                bar.classList.add('fill-red');
+                alertText.classList.add('text-disposal');
+                alertText.innerText = '⚠️ DISPOSAL REQUIRED';
+                card.classList.add('critical');
+            }
+        }
+
+        // Initialize Mock Data (Change these numbers to test the colors!)
+        window.onload = () => {
+            updateBinCapacity('yellow', 560);   // Optimal
+            updateBinCapacity('red', 2990);     // Disposal Required
+            updateBinCapacity('white', 2500);   // Nearing Capacity
+            updateBinCapacity('blue', 1200);    // Optimal
+        };
+    </script>
 </body>
 </html>
