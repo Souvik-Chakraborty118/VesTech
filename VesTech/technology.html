@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technology | BinGo</title>
+    <link rel="stylesheet" href="technology.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="index.html" class="brand-section">
+            <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo">
+            <div class="brand-text">
+                <h2>BinGo</h2>
+                <p>by VesTech</p>
+            </div>
+        </a>
+        <div class="nav-links">
+            <a href="index.html">Home</a>
+            <a href="dashboard.html">Command Center</a>
+            <a href="technology.html" style="color:#0d9488; border-bottom:2px solid #0d9488;">Technology</a>
+        </div>
+        <div class="auth-group">
+            <a href="login.html" class="text-link">Login</a>
+            <a href="register.html" class="btn-teal">Register</a>
+        </div>
+    </nav>
+
+    <div class="tech-container">
+        <div class="tech-header">
+            <h1>System Architecture</h1>
+            <p>The cutting-edge stack powering BinGo's autonomous waste segregation</p>
+        </div>
+
+        <div class="tech-grid">
+            <!-- AI Engine -->
+            <div class="tech-card">
+                <div class="tech-icon">🧠</div>
+                <h3>Machine Learning</h3>
+                <ul>
+                    <li><strong>Ultralytics YOLOv8:</strong> Real-time object detection model trained on custom biomedical waste datasets.</li>
+                    <li><strong>PyTorch:</strong> Underpinning deep learning framework for tensor computations.</li>
+                    <li><strong>Python 3.11:</strong> Core scripting environment.</li>
+                </ul>
+            </div>
+
+            <!-- Python Backend -->
+            <div class="tech-card">
+                <div class="tech-icon">⚙️</div>
+                <h3>AI Inference Server</h3>
+                <ul>
+                    <li><strong>FastAPI:</strong> High-performance async Python web framework handling image payloads.</li>
+                    <li><strong>Uvicorn:</strong> ASGI web server implementation.</li>
+                    <li><strong>Render Cloud:</strong> Hosting the AI inference endpoints.</li>
+                </ul>
+            </div>
+
+            <!-- Java Backend & DB -->
+            <div class="tech-card">
+                <div class="tech-icon">🗄️</div>
+                <h3>Telemetry & Database</h3>
+                <ul>
+                    <li><strong>Java Spring Boot:</strong> Enterprise-grade REST APIs for handling system telemetry.</li>
+                    <li><strong>Hibernate (JPA):</strong> ORM data mapping.</li>
+                    <li><strong>Neon Serverless Postgres:</strong> Cloud-native PostgreSQL for highly scalable data storage.</li>
+                </ul>
+            </div>
+
+            <!-- Frontend -->
+            <div class="tech-card">
+                <div class="tech-icon">💻</div>
+                <h3>User Interface</h3>
+                <ul>
+                    <li><strong>HTML5 / CSS3 / JS:</strong> Lightweight, responsive clinical frontend.</li>
+                    <li><strong>MediaDevices API:</strong> Real-time browser camera integration.</li>
+                    <li><strong>Vercel:</strong> Edge network hosting for ultra-fast UI delivery.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <h3>BinGo</h3>
+        <p>Next-generation automated AI waste classification and routing.</p>
+        <p class="copyright">© Developed by Team VesTech.</p>
+    </footer>
+</body>
+</html>
