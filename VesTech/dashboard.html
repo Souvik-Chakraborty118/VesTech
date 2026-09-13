@@ -5,11 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Command Center | BinGo</title>
     <link rel="stylesheet" href="dashboard.css">
-    <script>
-        if (localStorage.getItem('isAuthenticated') !== 'true') {
-            window.location.href = 'login.html';
-        }
-    </script>
+    <!-- Links to your separated JS file -->
+    <script src="dashboard.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -23,7 +20,7 @@
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="dashboard.html" style="color:#0d9488; border-bottom:2px solid #0d9488;">Command Center</a>
-            <a href="technology.html">Technology</a> <!-- FIXED LINK -->
+            <a href="technology.html">Technology</a>
         </div>
         <div class="auth-group">
             <button id="historyBtn" class="text-link" style="background:none; border:none; cursor:pointer; font-family:'Inter';">Order History</button>
@@ -36,7 +33,7 @@
         <div class="telemetry-header">
             <div>
                 <h1>System Telemetry</h1>
-                <p>Monitoring active YOLOv8 AI Nodes & Smart Bins across ICU and Wards</p>
+                <p>Monitoring active YOLOv8 AI & Smart Bins across ICU and Wards</p>
             </div>
             <div class="live-status"><span class="dot"></span> ONLINE</div>
         </div>
@@ -86,7 +83,7 @@
             <div class="order-card">
                 <div class="order-header">
                     <span class="label">ACTIVE COLLECTION ORDER</span>
-                    <span class="badge" id="activeStatus">EN ROUTE</span>
+                    <span class="badge" id="activeStatus">IN ROUTE</span>
                 </div>
                 <h2 id="activeOrderId">#ORD-9482-MED</h2>
                 <div class="order-details">
@@ -97,55 +94,11 @@
             </div>
             <div class="actions-card">
                 <h3>Quick Actions</h3>
-                <button class="action-btn btn-teal">🎯 Request Pickup</button>
-                <button class="action-btn btn-outline">🚀 Force Dispatch</button>
-                <button class="action-btn btn-danger">🛑 Emergency Stop</button>
+                <button class="action-btn btn-teal">Request Pickup</button>
+                <button class="action-btn btn-outline">Force Dispatch</button>
+                <button class="action-btn btn-danger">Emergency Stop</button>
             </div>
         </div>
     </div>
-
-    <!-- Capacity Logic Script -->
-    <script>
-        function updateBinCapacity(binPrefix, currentGrams) {
-            const maxGrams = 3000;
-            const percentage = Math.min((currentGrams / maxGrams) * 100, 100);
-            
-            // Update Text
-            document.getElementById(`${binPrefix}-weight`).innerHTML = `${currentGrams}g <span class="subtext">/ 3KG max</span>`;
-            
-            const bar = document.getElementById(`${binPrefix}-bar`);
-            const alertText = document.getElementById(`${binPrefix}-alert`);
-            const card = document.getElementById(`${binPrefix}-card`);
-
-            // Clear old classes
-            bar.className = '';
-            alertText.className = 'alert-text';
-            card.classList.remove('critical');
-
-            // Apply Logic
-            if (percentage <= 70) {
-                bar.classList.add('fill-green');
-                alertText.classList.add('text-optimal');
-                alertText.innerText = 'OPTIMAL';
-            } else if (percentage <= 89) {
-                bar.classList.add('fill-yellow');
-                alertText.classList.add('text-nearing');
-                alertText.innerText = 'NEARING CAPACITY';
-            } else {
-                bar.classList.add('fill-red');
-                alertText.classList.add('text-disposal');
-                alertText.innerText = '⚠️ DISPOSAL REQUIRED';
-                card.classList.add('critical');
-            }
-        }
-
-        // Initialize Mock Data (Change these numbers to test the colors!)
-        window.onload = () => {
-            updateBinCapacity('yellow', 560);   // Optimal
-            updateBinCapacity('red', 2990);     // Disposal Required
-            updateBinCapacity('white', 2500);   // Nearing Capacity
-            updateBinCapacity('blue', 1200);    // Optimal
-        };
-    </script>
 </body>
 </html>
