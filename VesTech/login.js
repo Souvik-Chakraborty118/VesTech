@@ -32,3 +32,4 @@ async function handleLogin(event) {
         btn.innerText = "Login";
     }
 }
+document.getElementById('authForm').addEventListener('submit', handleLogin);
