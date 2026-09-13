@@ -21,6 +21,7 @@
             <a href="technology.html">Technology</a>
         </div>
         <div class="auth-group">
+            <!-- Login is text (inactive), Register is Green (active) -->
             <a href="login.html" class="text-link">Login</a>
             <a href="register.html" class="btn-teal">Register</a>
         </div>
@@ -31,7 +32,8 @@
             <h1>Create Account</h1>
             <p class="subtitle">Deploy BinGo AI Waste Node in your Ward</p>
             
-            <form id="authForm" onsubmit="handleRegister(event)">
+            <form id="authForm">
+                <!-- Split First and Last Name Row -->
                 <div class="form-row">
                     <div class="input-group">
                         <label>First Name</label>
@@ -70,6 +72,7 @@
                 
                 <button type="submit" class="btn-teal btn-full" id="regSubmitBtn">Create Account</button>
             </form>
+            
             <a href="login.html" class="auth-link">Already signed up? <span>Login instead</span></a>
         </div>
     </div>
@@ -80,43 +83,7 @@
         <p class="copyright">© Developed by Team VesTech. All medical standards compliant.</p>
     </footer>
 
-    <script>
-        const JAVA_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? 'http://localhost:8080' : 'https://bingo-java-backend.onrender.com';
-
-        async function handleRegister(event) {
-            event.preventDefault(); 
-            const btn = document.getElementById('regSubmitBtn');
-            btn.innerText = "Connecting to Database...";
-            
-            const payload = {
-                firstName: document.getElementById('regFirst').value,
-                lastName: document.getElementById('regLast').value,
-                email: document.getElementById('regEmail').value,
-                password: document.getElementById('regPass').value,
-                role: document.getElementById('regRole').value
-            };
-
-            try {
-                const response = await fetch(`${JAVA_URL}/api/auth/register`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    localStorage.setItem('isAuthenticated', 'true');
-                    window.location.href = 'dashboard.html';
-                } else {
-                    const errMsg = await response.text();
-                    alert("Registration Failed: " + errMsg);
-                }
-            } catch (err) {
-                alert("Error connecting to Neon SQL Database.");
-            } finally {
-                btn.innerText = "Create Account";
-            }
-        }
-    </script>
+    <!-- Separated JavaScript File -->
+    <script src="register.js"></script>
 </body>
 </html>
