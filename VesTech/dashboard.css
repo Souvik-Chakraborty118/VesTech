@@ -71,3 +71,11 @@ footer h3 { font-size: 1rem; margin-bottom: 5px; color: #0d9488; font-weight: 80
     .navbar { flex-wrap: wrap; }
     .nav-links { order: 3; width: 100%; justify-content: center; margin-top: 15px; }
 }
+/* Bin Capacity Colors */
+.fill-green { background: #34d399; }
+.fill-yellow { background: #f59e0b; }
+.fill-red { background: #ef4444; }
+
+.text-optimal { color: #10b981; font-weight: 800; }
+.text-nearing { color: #f59e0b; font-weight: 800; }
+.text-disposal { color: #ef4444; font-weight: 800; }
