@@ -21,6 +21,7 @@
             <a href="technology.html">Technology</a>
         </div>
         <div class="auth-group">
+            <!-- Login is Green (active), Register is text (inactive) -->
             <a href="login.html" class="btn-teal">Login</a>
             <a href="register.html" class="text-link">Register</a>
         </div>
@@ -31,17 +32,19 @@
             <h1>Welcome Back</h1>
             <p class="subtitle">Sign in to the BinGo Portal</p>
             
-            <form id="authForm" onsubmit="handleLogin(event)">
+            <form id="authForm">
                 <div class="input-group">
                     <label>Email</label>
                     <span class="icon">✉️</span>
                     <input type="email" id="loginEmail" placeholder="Enter your email" required>
                 </div>
+                
                 <div class="input-group">
                     <label>Password</label>
                     <span class="icon">🔒</span>
                     <input type="password" id="loginPass" placeholder="••••••••••••" required>
                 </div>
+                
                 <div class="input-group">
                     <label>Your Role</label>
                     <span class="icon">🩺</span>
@@ -52,8 +55,10 @@
                         <option value="Waste Management Staff">Waste Management Staff</option>
                     </select>
                 </div>
+                
                 <button type="submit" class="btn-teal btn-full" id="loginSubmitBtn">Login</button>
             </form>
+            
             <a href="register.html" class="auth-link">New here? <span>Register Account</span></a>
         </div>
     </div>
@@ -61,42 +66,10 @@
     <footer>
         <h3>BinGo</h3>
         <p>Next-generation automated AI waste classification and routing.</p>
-        <p class="copyright">© Developed by Team VesTech.</p>
+        <p class="copyright">© Developed by Team VesTech. All medical standards compliant.</p>
     </footer>
 
-    <script>
-        const JAVA_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-            ? 'http://localhost:8080' : 'https://bingo-java-backend.onrender.com';
-
-        async function handleLogin(event) {
-            event.preventDefault();
-            const btn = document.getElementById('loginSubmitBtn');
-            btn.innerText = "Authenticating...";
-
-            const payload = {
-                email: document.getElementById('loginEmail').value,
-                password: document.getElementById('loginPass').value
-            };
-
-            try {
-                const response = await fetch(`${JAVA_URL}/api/auth/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (response.ok) {
-                    localStorage.setItem('isAuthenticated', 'true');
-                    window.location.href = 'dashboard.html';
-                } else {
-                    alert("Authentication Error: ID not found or incorrect password.");
-                }
-            } catch (err) {
-                alert("Error connecting to Neon SQL Database.");
-            } finally {
-                btn.innerText = "Login";
-            }
-        }
-    </script>
+    <!-- Separated JavaScript File -->
+    <script src="login.js"></script>
 </body>
 </html>
