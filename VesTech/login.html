@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | VesTech BinGo</title>
+    <title>Login | BinGo</title>
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
@@ -11,18 +11,19 @@
         <a href="index.html" class="brand-section">
             <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo">
             <div class="brand-text">
-                <h2>VesTech <span>BinGo</span></h2>
-                <p>BinGo by VesTech</p>
+                <h2>BinGo</h2>
+                <p>by VesTech</p>
             </div>
         </a>
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="dashboard.html">Command Center</a>
-            <a href="#">Technology</a>
+            <a href="technology.html">Technology</a>
         </div>
         <div class="auth-group">
-            <a href="login.html" class="text-link" style="color: #0d9488;">Login</a>
-            <a href="register.html" class="btn-teal">Register Portal</a>
+            <!-- Login is Green here, Register is plain text -->
+            <a href="login.html" class="btn-teal">Login</a>
+            <a href="register.html" class="text-link">Register</a>
         </div>
     </nav>
 
@@ -33,21 +34,23 @@
             
             <form id="authForm" onsubmit="handleAuth(event)">
                 <div class="input-group">
-                    <label>Hospital Email</label>
+                    <label>Email</label>
                     <span class="icon">✉️</span>
-                    <input type="email" placeholder="doctor@hospital.org">
+                    <input type="email" placeholder="Enter your email" required>
                 </div>
                 <div class="input-group">
                     <label>Password</label>
                     <span class="icon">🔒</span>
-                    <input type="password" placeholder="••••••••••••">
+                    <input type="password" placeholder="••••••••••••" required>
                 </div>
                 <div class="input-group">
                     <label>Your Role</label>
                     <span class="icon">🩺</span>
-                    <select>
-                        <option>Doctor / Nurse</option>
-                        <option>Sanitation Staff</option>
+                    <select required>
+                        <option value="" disabled selected>Select your clinical rank...</option>
+                        <option>Doctor</option>
+                        <option>Nurse</option>
+                        <option>Waste Management Staff</option>
                     </select>
                 </div>
                 <button type="submit" class="btn-teal btn-full">Login</button>
@@ -57,10 +60,11 @@
     </div>
 
     <footer>
-        <h3>BinGo <span>Platform</span></h3>
+        <h3>BinGo</h3>
         <p>Next-generation automated AI waste classification and routing.</p>
         <p class="copyright">© Developed by Team VesTech.</p>
     </footer>
+
     <script>
         function handleAuth(event) {
             event.preventDefault();
