@@ -31,3 +31,24 @@ public class AuthController {
         return ResponseEntity.ok("Login successful");
     }
 }
+@PutMapping("/update")
+    public ResponseEntity<String> updateUser(@RequestBody User updatedUser) {
+        Optional<User> existingUserOpt = userRepository.findByEmail(updatedUser.getEmail());
+        
+        if (existingUserOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("User not found in database.");
+        }
+        
+        User existingUser = existingUserOpt.get();
+        existingUser.setFirstName(updatedUser.getFirstName());
+        existingUser.setLastName(updatedUser.getLastName());
+        existingUser.setRole(updatedUser.getRole());
+        
+        // Only update password if a new one was provided
+        if (updatedUser.getPassword() != null && !updatedUser.getPassword().isEmpty()) {
+            existingUser.setPassword(updatedUser.getPassword());
+        }
+        
+        userRepository.save(existingUser);
+        return ResponseEntity.ok("Profile updated in Neon SQL successfully.");
+    }
