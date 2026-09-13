@@ -3,8 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Edit Profile | VesTech BinGo</title>
+    <title>Edit Profile | BinGo</title>
     <link rel="stylesheet" href="profile_edit.css">
+    <!-- Links to your separated JS file -->
+    <script src="profile_edit.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -12,17 +14,16 @@
             <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo">
             <div class="brand-text">
                 <h2>BinGo</h2>
-                <p>    by VesTech</p>
+                <p>by VesTech</p>
             </div>
         </a>
         <div class="nav-links">
             <a href="index.html">Home</a>
             <a href="dashboard.html">Command Center</a>
-            <a href="#">Technology</a>
+            <a href="technology.html">Technology</a>
         </div>
         <div class="auth-group">
-            <a href="login.html" class="text-link">Login</a>
-            <a href="register.html" class="btn-teal">Register Portal</a>
+            <a href="profile_edit.html" class="btn-teal">Profile</a>
         </div>
     </nav>
 
@@ -31,28 +32,46 @@
             <h1>Edit Profile</h1>
             <p class="subtitle">Keep your operator credentials current</p>
             
-            <form action="#">
-                <div class="input-group">
-                    <label>Update Name</label>
-                    <span class="icon">👤</span>
-                    <input type="text" placeholder="Dr. Emily Okonkwo">
+            <form id="profileForm" onsubmit="saveProfile(event)">
+                <div class="form-row">
+                    <div class="input-group">
+                        <label>First Name</label>
+                        <span class="icon">👤</span>
+                        <input type="text" id="editFirst" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Last Name</label>
+                        <span class="icon">👤</span>
+                        <input type="text" id="editLast" required>
+                    </div>
                 </div>
+
+                <div class="input-group">
+                    <label>Email</label>
+                    <span class="icon">✉️</span>
+                    <input type="email" id="editEmail" required>
+                </div>
+
+                <div class="input-group">
+                    <label>Role</label>
+                    <span class="icon">🩺</span>
+                    <select id="editRole" required>
+                        <option value="Doctor">Doctor</option>
+                        <option value="Nurse">Nurse</option>
+                        <option value="Waste Management Staff">Waste Management Staff</option>
+                    </select>
+                </div>
+
                 <div class="input-group">
                     <label>New Password</label>
-                    <span class="icon">❌</span>
-                    <input type="password" placeholder="Leave blank to keep current">
+                    <span class="icon">🔒</span>
+                    <input type="password" id="editPass" placeholder="Leave blank to keep current">
                 </div>
                 
                 <button type="submit" class="btn-teal btn-full" style="margin-bottom: 10px;">Save Changes</button>
-                <a href="dashboard.html" class="btn-secondary btn-full" style="display:inline-block; text-decoration:none;">Go Back</a>
+                <button type="button" id="logoutBtn" class="btn-danger btn-full" style="cursor:pointer;">Log Out</button>
             </form>
         </div>
     </div>
-
-    <footer>
-        <h3>BinGo</h3>
-        <p>Next-generation automated AI waste classification and routing.</p>
-        <p class="copyright">© Developed by Team VesTech.</p>
-    </footer>
 </body>
 </html>
