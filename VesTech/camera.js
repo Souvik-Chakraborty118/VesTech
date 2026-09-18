@@ -1,4 +1,4 @@
-// Backend endpoint (modify if running backend on Render or external IP)
+// Backend endpoint pointing to your live Render Python backend
 const BACKEND_URL = "https://bingo-backend-0qbr.onrender.com";
 
 const video = document.getElementById("webcam");
@@ -36,10 +36,9 @@ async function initCamera() {
       audio: false
     });
 
-    // 1. Assign stream to video element
     video.srcObject = stream;
 
-    // 2. Attach listener BEFORE play() to avoid race conditions
+    // Attach metadata event BEFORE calling play()
     video.onloadedmetadata = () => {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
@@ -49,7 +48,6 @@ async function initCamera() {
       startAutoDetectionLoop();
     };
 
-    // 3. Start playback
     await video.play();
 
   } catch (err) {
@@ -58,13 +56,13 @@ async function initCamera() {
   }
 }
 
-// Automated Continuous Loop
+// Automated Continuous Detection Loop
 function startAutoDetectionLoop() {
   setInterval(async () => {
     if (!isStreaming || isRequestPending || video.paused || video.ended) return;
 
     await processCCTVFrame();
-  }, 120); // Polls every 120ms (~8 FPS for smooth detection without network saturation)
+  }, 120); // Polls every 120ms (~8 FPS)
 }
 
 // Offscreen buffer canvas for lightweight frame encoding
@@ -79,7 +77,7 @@ async function processCCTVFrame() {
   offscreenCanvas.height = video.videoHeight;
   offscreenCtx.drawImage(video, 0, 0);
 
-  // Compress frame to lightweight JPEG
+  // Compress frame to lightweight JPEG in RAM
   const frameBase64 = offscreenCanvas.toDataURL("image/jpeg", 0.65);
 
   try {
@@ -112,12 +110,12 @@ function renderBoundingBoxes(detections) {
   detections.forEach((item) => {
     const { box, color, class_name, bin, confidence } = item;
 
-    // Draw bounding box
+    // Draw outer bounding box
     ctx.strokeStyle = color;
     ctx.lineWidth = 3;
     ctx.strokeRect(box.x1, box.y1, box.width, box.height);
 
-    // Draw label background pill
+    // Draw label pill
     const label = `${class_name} [${bin}] ${(confidence * 100).toFixed(0)}%`;
     ctx.font = "bold 14px 'Segoe UI', sans-serif";
     const textWidth = ctx.measureText(label).width;
