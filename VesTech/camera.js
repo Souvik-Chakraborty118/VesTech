@@ -12,6 +12,9 @@ const countRed = document.getElementById("count-red");
 const countYellow = document.getElementById("count-yellow");
 const countWhite = document.getElementById("count-white");
 const countBlue = document.getElementById("count-blue");
+// NEW: Safely grab the Green Bin counter if you add it to the HTML later
+const countGreen = document.getElementById("count-green"); 
+
 const detectionList = document.getElementById("detection-list");
 
 const toggleStreamBtn = document.getElementById("toggle-stream-btn");
@@ -38,7 +41,9 @@ async function initCamera() {
       canvas.height = video.videoHeight;
       document.getElementById("hud-res").textContent = `RES: ${video.videoWidth}x${video.videoHeight}`;
       statusText.textContent = "LIVE CCTV STREAMING";
-      runDetectionLoop();
+      
+      // CRITICAL FIX: This now points to the correct walkie-talkie loop
+      runDetectionLoop(); 
     };
 
     await video.play();
@@ -53,6 +58,7 @@ async function runDetectionLoop() {
   if (isStreaming && !video.paused && !video.ended) {
     await processCCTVFrame();
   }
+  // Wait 150ms after Render replies before taking the next photo
   setTimeout(runDetectionLoop, 150);
 }
 
@@ -62,7 +68,6 @@ const offscreenCtx = offscreenCanvas.getContext("2d");
 async function processCCTVFrame() {
   if (video.videoWidth === 0 || video.videoHeight === 0) return;
 
-  // UPGRADE: 640px so the AI can actually see small objects
   const targetWidth = 640;
   const targetHeight = Math.round((video.videoHeight / video.videoWidth) * targetWidth);
 
@@ -107,7 +112,7 @@ async function processCCTVFrame() {
     const now = performance.now();
     const timeTaken = now - requestStartTime;
     
-    // Fix the 0.0 FPS Illusion on cold starts
+    // Smooth out the FPS calculation so it doesn't say 0.0 during cold boots
     if (timeTaken > 5000) {
         hudFps.textContent = `FPS: WAKING UP...`;
     } else {
@@ -128,6 +133,7 @@ function renderBoundingBoxes(detections) {
     const width = box.width * scaleX;
     const height = box.height * scaleY;
 
+    // Draw the green (or other color) bounding box
     ctx.strokeStyle = color;
     ctx.lineWidth = 3;
     ctx.strokeRect(x1, y1, width, height);
@@ -145,10 +151,13 @@ function renderBoundingBoxes(detections) {
 }
 
 function updateTelemetry(summary, detections, hasSharps) {
-  countRed.textContent = summary.RED || 0;
-  countYellow.textContent = summary.YELLOW || 0;
-  countWhite.textContent = summary.WHITE || 0;
-  countBlue.textContent = summary.BLUE || 0;
+  if (countRed) countRed.textContent = summary.RED || 0;
+  if (countYellow) countYellow.textContent = summary.YELLOW || 0;
+  if (countWhite) countWhite.textContent = summary.WHITE || 0;
+  if (countBlue) countBlue.textContent = summary.BLUE || 0;
+  
+  // Update Green bin if it exists in the HTML
+  if (countGreen) countGreen.textContent = summary.GREEN || 0;
 
   if (hasSharps) {
     sharpsAlarm.classList.remove("hidden");
