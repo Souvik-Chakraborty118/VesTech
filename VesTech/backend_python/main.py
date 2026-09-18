@@ -108,7 +108,9 @@ def detect_frame(payload: FramePayload):
                 objects_processed = 0  # Track how many objects we analyze
                 
                 for c in contours:
-                    if objects_processed >= 3:  # Stop after 3 objects to keep the app fast
+                    # CHANGED FROM 3 TO 1: Only box the single largest object!
+                    # This prevents Groq HTTP 429 Rate Limits and keeps the UI clean.
+                    if objects_processed >= 1:  
                         break
                         
                     x, y, w, h = cv2.boundingRect(c)
