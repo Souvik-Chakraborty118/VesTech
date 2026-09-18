@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login | BinGo</title>
     <link rel="stylesheet" href="login.css">
+    <!-- FontAwesome for the Eye Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <nav class="navbar">
         <a href="index.html" class="brand-section">
-            <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo">
+            <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo" style="border-radius: 8px;">
             <div class="brand-text">
                 <h2>BinGo</h2>
                 <p>by VesTech</p>
@@ -21,7 +23,6 @@
             <a href="technology.html">Technology</a>
         </div>
         <div class="auth-group">
-            <!-- Login is Green (active), Register is text (inactive) -->
             <a href="login.html" class="btn-teal">Login</a>
             <a href="register.html" class="text-link">Register</a>
         </div>
@@ -42,7 +43,11 @@
                 <div class="input-group">
                     <label>Password</label>
                     <span class="icon">🔒</span>
-                    <input type="password" id="loginPass" placeholder="••••••••••••" required>
+                    <!-- Password Wrapper with Eye Icon -->
+                    <div class="password-wrapper">
+                        <input type="password" id="loginPass" placeholder="••••••••••••" required>
+                        <i class="fa-solid fa-eye toggle-password" id="togglePassword"></i>
+                    </div>
                 </div>
                 
                 <div class="input-group">
@@ -69,7 +74,6 @@
         <p class="copyright">© Developed by Team VesTech. All medical standards compliant.</p>
     </footer>
 
-    <!-- Separated JavaScript File -->
     <script src="login.js"></script>
 </body>
 </html>
