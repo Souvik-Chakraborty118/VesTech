@@ -12,23 +12,22 @@ const countRed = document.getElementById("count-red");
 const countYellow = document.getElementById("count-yellow");
 const countWhite = document.getElementById("count-white");
 const countBlue = document.getElementById("count-blue");
-// NEW: Safely grab the Green Bin counter if you add it to the HTML later
-const countGreen = document.getElementById("count-green"); 
-
+const countGreen = document.getElementById("count-green"); // Safe Waste
 const detectionList = document.getElementById("detection-list");
 
 const toggleStreamBtn = document.getElementById("toggle-stream-btn");
 const switchCamBtn = document.getElementById("switch-cam-btn");
 
-let isStreaming = true;
 let currentFacingMode = "environment";
-let lastFrameTime = performance.now();
 let scaleX = 1;
 let scaleY = 1;
 
+// Change the "Pause CCTV" button back to a "Take Photo" button
+toggleStreamBtn.innerHTML = `<i class="fa-solid fa-camera"></i> Take Photo & Scan`;
+
 async function initCamera() {
   try {
-    statusText.textContent = "ACTIVATING CAMERA...";
+    statusText.textContent = "CAMERA READY. CLICK BUTTON TO SCAN.";
     const stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: currentFacingMode, width: { ideal: 1280 }, height: { ideal: 720 } },
       audio: false
@@ -40,10 +39,7 @@ async function initCamera() {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       document.getElementById("hud-res").textContent = `RES: ${video.videoWidth}x${video.videoHeight}`;
-      statusText.textContent = "LIVE CCTV STREAMING";
-      
-      // CRITICAL FIX: This now points to the correct walkie-talkie loop
-      runDetectionLoop(); 
+      hudFps.textContent = `MANUAL MODE`;
     };
 
     await video.play();
@@ -54,20 +50,18 @@ async function initCamera() {
   }
 }
 
-async function runDetectionLoop() {
-  if (isStreaming && !video.paused && !video.ended) {
-    await processCCTVFrame();
-  }
-  // Wait 150ms after Render replies before taking the next photo
-  setTimeout(runDetectionLoop, 150);
-}
-
-const offscreenCanvas = document.createElement("canvas");
-const offscreenCtx = offscreenCanvas.getContext("2d");
-
-async function processCCTVFrame() {
+// Manual Photo Capture Function
+async function takePhotoAndScan() {
   if (video.videoWidth === 0 || video.videoHeight === 0) return;
 
+  statusText.textContent = "SCANNING IMAGE... PLEASE WAIT...";
+  toggleStreamBtn.disabled = true;
+  ctx.clearRect(0, 0, canvas.width, canvas.height); // Clear old boxes
+
+  // We can send a high-quality 640px image since we are only doing 1 at a time
+  const offscreenCanvas = document.createElement("canvas");
+  const offscreenCtx = offscreenCanvas.getContext("2d");
+  
   const targetWidth = 640;
   const targetHeight = Math.round((video.videoHeight / video.videoWidth) * targetWidth);
 
@@ -78,48 +72,28 @@ async function processCCTVFrame() {
   scaleX = canvas.width / targetWidth;
   scaleY = canvas.height / targetHeight;
 
-  const frameBase64 = offscreenCanvas.toDataURL("image/jpeg", 0.7);
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 90000);
-
-  const requestStartTime = performance.now();
-
+  const frameBase64 = offscreenCanvas.toDataURL("image/jpeg", 0.8);
+  
   try {
     const response = await fetch(`${BACKEND_URL}/detect_frame`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: frameBase64 }),
-      signal: controller.signal
+      body: JSON.stringify({ image: frameBase64 })
     });
-
-    clearTimeout(timeoutId);
 
     if (response.ok) {
       const data = await response.json();
       renderBoundingBoxes(data.detections);
       updateTelemetry(data.bin_summary, data.detections, data.has_sharps);
-      statusText.textContent = "LIVE CCTV STREAMING";
+      statusText.textContent = "SCAN COMPLETE.";
     } else {
       statusText.textContent = `SERVER ERROR: HTTP ${response.status}`;
     }
   } catch (err) {
-    if (err.name === "AbortError") {
-      statusText.textContent = "WAKING UP SERVER...";
-    } else {
-      statusText.textContent = "BACKEND DISCONNECTED";
-    }
+    statusText.textContent = "BACKEND DISCONNECTED OR SLEEPING. TRY AGAIN.";
+    console.error(err);
   } finally {
-    const now = performance.now();
-    const timeTaken = now - requestStartTime;
-    
-    // Smooth out the FPS calculation so it doesn't say 0.0 during cold boots
-    if (timeTaken > 5000) {
-        hudFps.textContent = `FPS: WAKING UP...`;
-    } else {
-        const fps = (1000 / (now - lastFrameTime)).toFixed(1);
-        hudFps.textContent = `FPS: ${fps}`;
-    }
-    lastFrameTime = performance.now();
+    toggleStreamBtn.disabled = false;
   }
 }
 
@@ -133,7 +107,6 @@ function renderBoundingBoxes(detections) {
     const width = box.width * scaleX;
     const height = box.height * scaleY;
 
-    // Draw the green (or other color) bounding box
     ctx.strokeStyle = color;
     ctx.lineWidth = 3;
     ctx.strokeRect(x1, y1, width, height);
@@ -155,8 +128,6 @@ function updateTelemetry(summary, detections, hasSharps) {
   if (countYellow) countYellow.textContent = summary.YELLOW || 0;
   if (countWhite) countWhite.textContent = summary.WHITE || 0;
   if (countBlue) countBlue.textContent = summary.BLUE || 0;
-  
-  // Update Green bin if it exists in the HTML
   if (countGreen) countGreen.textContent = summary.GREEN || 0;
 
   if (hasSharps) {
@@ -166,7 +137,7 @@ function updateTelemetry(summary, detections, hasSharps) {
   }
 
   if (detections.length === 0) {
-    detectionList.innerHTML = `<li class="empty-state">Awaiting objects in CCTV view...</li>`;
+    detectionList.innerHTML = `<li class="empty-state">No medical waste detected.</li>`;
   } else {
     detectionList.innerHTML = detections.slice(0, 5).map((d) => `
         <li class="log-entry" style="border-left: 4px solid ${d.color};">
@@ -177,18 +148,8 @@ function updateTelemetry(summary, detections, hasSharps) {
   }
 }
 
-toggleStreamBtn.addEventListener("click", () => {
-  isStreaming = !isStreaming;
-  if (!isStreaming) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    toggleStreamBtn.innerHTML = `<i class="fa-solid fa-play"></i> Resume CCTV`;
-    statusText.textContent = "CCTV PAUSED";
-  } else {
-    toggleStreamBtn.innerHTML = `<i class="fa-solid fa-pause"></i> Pause CCTV`;
-    statusText.textContent = "LIVE CCTV STREAMING";
-    lastFrameTime = performance.now();
-  }
-});
+// Attach the manual photo function to the button
+toggleStreamBtn.addEventListener("click", takePhotoAndScan);
 
 switchCamBtn.addEventListener("click", async () => {
   currentFacingMode = currentFacingMode === "user" ? "environment" : "user";
