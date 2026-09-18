@@ -19,9 +19,11 @@ const toggleStreamBtn = document.getElementById("toggle-stream-btn");
 const switchCamBtn = document.getElementById("switch-cam-btn");
 
 let isStreaming = true;
-let currentFacingMode = "environment"; // "user" for laptop, "environment" for phone back camera
+let currentFacingMode = "environment";
 let lastFrameTime = performance.now();
 let isRequestPending = false;
+let scaleX = 1;
+let scaleY = 1;
 
 // Initialize CCTV Stream
 async function initCamera() {
@@ -38,34 +40,32 @@ async function initCamera() {
 
     video.srcObject = stream;
 
-    // Attach metadata event BEFORE calling play()
     video.onloadedmetadata = () => {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       document.getElementById("hud-res").textContent = `RES: ${video.videoWidth}x${video.videoHeight}`;
       statusText.textContent = "LIVE CCTV STREAMING";
-      
+      console.log(`[BinGo CCTV] Camera ready: ${video.videoWidth}x${video.videoHeight}`);
       startAutoDetectionLoop();
     };
 
     await video.play();
-
   } catch (err) {
-    console.error("Camera access error:", err);
+    console.error("[BinGo CCTV] Camera access error:", err);
     statusText.textContent = "CAMERA ERROR / ACCESS DENIED";
   }
 }
 
 // Automated Continuous Detection Loop
 function startAutoDetectionLoop() {
+  console.log("[BinGo CCTV] Detection loop initialized.");
   setInterval(async () => {
     if (!isStreaming || isRequestPending || video.paused || video.ended) return;
-
     await processCCTVFrame();
-  }, 120); // Polls every 120ms (~8 FPS)
+  }, 200); // 5 FPS polling to prevent saturating the network/Render CPU
 }
 
-// Offscreen buffer canvas for lightweight frame encoding
+// Offscreen buffer canvas (scaled down to 640px width for fast cloud inference)
 const offscreenCanvas = document.createElement("canvas");
 const offscreenCtx = offscreenCanvas.getContext("2d");
 
@@ -73,27 +73,51 @@ async function processCCTVFrame() {
   if (video.videoWidth === 0 || video.videoHeight === 0) return;
 
   isRequestPending = true;
-  offscreenCanvas.width = video.videoWidth;
-  offscreenCanvas.height = video.videoHeight;
-  offscreenCtx.drawImage(video, 0, 0);
 
-  // Compress frame to lightweight JPEG in RAM
-  const frameBase64 = offscreenCanvas.toDataURL("image/jpeg", 0.65);
+  // Downscale to 640px wide for ~25KB payload instead of 200KB
+  const targetWidth = 640;
+  const targetHeight = Math.round((video.videoHeight / video.videoWidth) * targetWidth);
+  
+  offscreenCanvas.width = targetWidth;
+  offscreenCanvas.height = targetHeight;
+  offscreenCtx.drawImage(video, 0, 0, targetWidth, targetHeight);
+
+  // Coordinate ratio to scale boxes back up to display video size
+  scaleX = canvas.width / targetWidth;
+  scaleY = canvas.height / targetHeight;
+
+  const frameBase64 = offscreenCanvas.toDataURL("image/jpeg", 0.6);
+
+  // 8-second timeout so a slow request never locks up the camera
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
 
   try {
     const response = await fetch(`${BACKEND_URL}/detect_frame`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ image: frameBase64 })
+      body: JSON.stringify({ image: frameBase64 }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     if (response.ok) {
       const data = await response.json();
       renderBoundingBoxes(data.detections);
       updateTelemetry(data.bin_summary, data.detections, data.has_sharps);
+      statusText.textContent = "LIVE CCTV STREAMING";
+    } else {
+      console.warn(`[BinGo CCTV] Backend returned HTTP ${response.status}`);
     }
   } catch (err) {
-    statusText.textContent = "BACKEND DISCONNECTED";
+    if (err.name === "AbortError") {
+      console.warn("[BinGo CCTV] Request timed out. Waking up Render instance...");
+      statusText.textContent = "WAKING UP SERVER...";
+    } else {
+      console.error("[BinGo CCTV] Network error:", err);
+      statusText.textContent = "BACKEND DISCONNECTED";
+    }
   } finally {
     const now = performance.now();
     const fps = (1000 / (now - lastFrameTime)).toFixed(1);
@@ -110,22 +134,28 @@ function renderBoundingBoxes(detections) {
   detections.forEach((item) => {
     const { box, color, class_name, bin, confidence } = item;
 
+    // Scale coordinates from 640px model space back to display canvas size
+    const x1 = box.x1 * scaleX;
+    const y1 = box.y1 * scaleY;
+    const width = box.width * scaleX;
+    const height = box.height * scaleY;
+
     // Draw outer bounding box
     ctx.strokeStyle = color;
     ctx.lineWidth = 3;
-    ctx.strokeRect(box.x1, box.y1, box.width, box.height);
+    ctx.strokeRect(x1, y1, width, height);
 
     // Draw label pill
     const label = `${class_name} [${bin}] ${(confidence * 100).toFixed(0)}%`;
-    ctx.font = "bold 14px 'Segoe UI', sans-serif";
+    ctx.font = "bold 15px 'Segoe UI', sans-serif";
     const textWidth = ctx.measureText(label).width;
 
     ctx.fillStyle = color;
-    ctx.fillRect(box.x1, Math.max(0, box.y1 - 24), textWidth + 12, 24);
+    ctx.fillRect(x1, Math.max(0, y1 - 26), textWidth + 12, 26);
 
     // Draw label text
     ctx.fillStyle = bin === "WHITE" || bin === "YELLOW" ? "#000" : "#FFF";
-    ctx.fillText(label, box.x1 + 6, Math.max(16, box.y1 - 7));
+    ctx.fillText(label, x1 + 6, Math.max(18, y1 - 8));
   });
 }
 
