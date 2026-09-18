@@ -17,26 +17,36 @@ torch.set_num_threads(1)
 from ultralytics import YOLO
 
 # ==========================================
-# 1. AUTO-UNZIP LOGIC FOR GITHUB 100MB LIMIT
+# 1. AUTO-UNZIP & DEEP SEARCH LOGIC
 # ==========================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "model")
-PT_PATH = os.path.join(MODEL_DIR, "best.pt")
 ZIP_PATH = os.path.join(MODEL_DIR, "best.pt.zip")
 
-# If the raw .pt file isn't there, look for the .zip and extract it
-if not os.path.exists(PT_PATH):
-    if os.path.exists(ZIP_PATH):
-        print(f">>> Extracting model from {ZIP_PATH}...")
-        with zipfile.ZipFile(ZIP_PATH, 'r') as zip_ref:
-            zip_ref.extractall(MODEL_DIR)
-        print(">>> Extraction complete.")
-    else:
-        print(f"CRITICAL WARNING: Neither {PT_PATH} nor {ZIP_PATH} found!")
+# Unzip if the zip file exists
+if os.path.exists(ZIP_PATH):
+    print(f">>> Extracting model from {ZIP_PATH}...")
+    with zipfile.ZipFile(ZIP_PATH, 'r') as zip_ref:
+        zip_ref.extractall(MODEL_DIR)
+    print(">>> Extraction complete. Hunting for best.pt...")
 
-print(f">>> Loading YOLO model from: {PT_PATH}")
+# Search every folder inside MODEL_DIR to find exactly where best.pt landed
+PT_PATH = None
+for root, dirs, files in os.walk(MODEL_DIR):
+    if "best.pt" in files:
+        PT_PATH = os.path.join(root, "best.pt")
+        break
+
+if not PT_PATH:
+    print("CRITICAL WARNING: best.pt not found anywhere inside the model directory!")
+    PT_PATH = "best.pt"  # Failsafe fallback
+
+print(f">>> Successfully located and loading YOLO model from: {PT_PATH}")
 model = YOLO(PT_PATH)
 
+# ==========================================
+# 2. FASTAPI SERVER SETUP
+# ==========================================
 app = FastAPI(title="VesTech BinGo Manual Scan")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
@@ -76,9 +86,7 @@ def detect_frame(payload: FramePayload):
         detections = []
         bin_counts = {"RED": 0, "YELLOW": 0, "WHITE": 0, "BLUE": 0, "GREEN": 0}
 
-        # ==========================================
-        # 2. AI DETECTION (Medical Waste)
-        # ==========================================
+        # AI DETECTION
         for box in results.boxes:
             cls_id = int(box.cls[0])
             cls_name = model.names[cls_id]
@@ -98,9 +106,7 @@ def detect_frame(payload: FramePayload):
                 "box": {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "width": int(x2 - x1), "height": int(y2 - y1)}
             })
 
-        # ==========================================
-        # 3. OPENCV FALLBACK (Safe Waste)
-        # ==========================================
+        # OPENCV FALLBACK (Safe Waste)
         if len(detections) == 0:
             cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2GRAY)
             blurred = cv2.GaussianBlur(cv_img, (7, 7), 0)
@@ -115,7 +121,6 @@ def detect_frame(payload: FramePayload):
                     x, y, w, h = cv2.boundingRect(c)
                     area = w * h
                     
-                    # Target objects bigger than dust, but smaller than humans
                     if 1000 < area < (screen_area * 0.20):
                         detections.append({
                             "class_name": "Safe Waste",
@@ -127,7 +132,6 @@ def detect_frame(payload: FramePayload):
                         bin_counts["GREEN"] += 1
                         break 
 
-        # Memory Cleanup
         del pil_img
         del image_bytes
         del results
