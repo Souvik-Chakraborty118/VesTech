@@ -29,16 +29,12 @@ body {
   gap: 12px;
 }
 
-.logo-icon {
-  height: 34px;
-  width: 34px;
-  background: #10b981;
-  color: #0b1120;
+.logo-img {
+  height: 38px;
+  width: 38px;
   border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
+  object-fit: cover;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Gives the logo a nice subtle pop */
 }
 
 .cctv-status-badge {
