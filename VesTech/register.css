@@ -57,3 +57,11 @@ footer p { font-size: 0.85rem; color: #64748b; }
 @media (max-width: 500px) {
     .form-row { flex-direction: column; gap: 0; }
 }
+.input-row {
+  display: flex;
+  gap: 15px;
+  width: 100%;
+}
+.half-width {
+  flex: 1;
+}
