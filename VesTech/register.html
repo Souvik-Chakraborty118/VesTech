@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Account | BinGo</title>
+    <title>Register | BinGo</title>
     <link rel="stylesheet" href="register.css">
+    <!-- FontAwesome for the Eye Icon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <nav class="navbar">
         <a href="index.html" class="brand-section">
-            <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo">
+            <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="brand-logo" style="border-radius: 8px;">
             <div class="brand-text">
                 <h2>BinGo</h2>
                 <p>by VesTech</p>
@@ -21,7 +23,6 @@
             <a href="technology.html">Technology</a>
         </div>
         <div class="auth-group">
-            <!-- Login is text (inactive), Register is Green (active) -->
             <a href="login.html" class="text-link">Login</a>
             <a href="register.html" class="btn-teal">Register</a>
         </div>
@@ -30,20 +31,21 @@
     <div class="page-container">
         <div class="auth-card">
             <h1>Create Account</h1>
-            <p class="subtitle">Deploy BinGo AI Waste Node in your Ward</p>
+            <p class="subtitle">Join the BinGo network</p>
             
-            <form id="authForm">
-                <!-- Split First and Last Name Row -->
-                <div class="form-row">
-                    <div class="input-group">
+            <form id="regForm">
+                
+                <!-- SEPARATE FIRST & LAST NAME FIELDS -->
+                <div class="input-row" style="display: flex; gap: 15px; width: 100%;">
+                    <div class="input-group half-width" style="flex: 1;">
                         <label>First Name</label>
                         <span class="icon">👤</span>
-                        <input type="text" id="regFirst" placeholder="First Name" required>
+                        <input type="text" id="regFirstName" placeholder="First Name" required>
                     </div>
-                    <div class="input-group">
+                    <div class="input-group half-width" style="flex: 1;">
                         <label>Last Name</label>
                         <span class="icon">👤</span>
-                        <input type="text" id="regLast" placeholder="Last Name" required>
+                        <input type="text" id="regLastName" placeholder="Last Name" required>
                     </div>
                 </div>
 
@@ -52,15 +54,9 @@
                     <span class="icon">✉️</span>
                     <input type="email" id="regEmail" placeholder="Enter your email" required>
                 </div>
-
+                
                 <div class="input-group">
-                    <label>Password</label>
-                    <span class="icon">🔒</span>
-                    <input type="password" id="regPass" placeholder="Create strong password" required>
-                </div>
-
-                <div class="input-group">
-                    <label>Select Role</label>
+                    <label>Your Role</label>
                     <span class="icon">🩺</span>
                     <select id="regRole" required>
                         <option value="" disabled selected>Select your clinical rank...</option>
@@ -69,11 +65,27 @@
                         <option value="Waste Management Staff">Waste Management Staff</option>
                     </select>
                 </div>
+
+                <!-- PASSWORD FIELD WITH INLINE EYE ICON FIX -->
+                <div class="input-group" style="position: relative;">
+                    <label>Password</label>
+                    <span class="icon">🔒</span>
+                    <input type="password" id="regPass" placeholder="••••••••••••" required style="padding-right: 40px;">
+                    <i class="fa-solid fa-eye toggle-password" id="togglePassword" style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: #94a3b8;"></i>
+                </div>
+
+                <!-- CONFIRM PASSWORD FIELD WITH INLINE EYE ICON FIX -->
+                <div class="input-group" style="position: relative;">
+                    <label>Confirm Password</label>
+                    <span class="icon">🔒</span>
+                    <input type="password" id="regConfirmPass" placeholder="••••••••••••" required style="padding-right: 40px;">
+                    <i class="fa-solid fa-eye toggle-password" id="toggleConfirmPassword" style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: #94a3b8;"></i>
+                </div>
                 
                 <button type="submit" class="btn-teal btn-full" id="regSubmitBtn">Create Account</button>
             </form>
             
-            <a href="login.html" class="auth-link">Already signed up? <span>Login instead</span></a>
+            <a href="login.html" class="auth-link">Already have an account? <span>Login Here</span></a>
         </div>
     </div>
 
@@ -83,8 +95,6 @@
         <p class="copyright">© Developed by Team VesTech. All medical standards compliant.</p>
     </footer>
 
-    <!-- Separated JavaScript File -->
     <script src="register.js"></script>
 </body>
 </html>
-
