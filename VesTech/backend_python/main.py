@@ -94,7 +94,7 @@ def detect_frame(payload: FramePayload):
                 "box": {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "width": int(x2 - x1), "height": int(y2 - y1)}
             })
 
-        # LAYER 2: HYBRID OPENCV + GROQ FALLBACK
+       # LAYER 2: HYBRID OPENCV + GROQ FALLBACK
         if len(detections) == 0:
             cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2GRAY)
             blurred = cv2.GaussianBlur(cv_img, (7, 7), 0)
@@ -109,34 +109,28 @@ def detect_frame(payload: FramePayload):
                     x, y, w, h = cv2.boundingRect(c)
                     area = w * h
                     
-                    # Target objects taking up between ~2% and 40% of the screen
                     if 8000 < area < (screen_area * 0.40):
                         
-                        # 1. Crop the object using OpenCV coordinates
+                        # 1. Crop and RESIZE for Groq (Prevents payload size limits)
                         cropped_img = pil_img.crop((int(x), int(y), int(x+w), int(y+h)))
+                        cropped_img.thumbnail((300, 300)) # Compress image to ensure API accepts it
                         buffered = io.BytesIO()
-                        cropped_img.save(buffered, format="JPEG")
+                        cropped_img.save(buffered, format="JPEG", quality=80)
                         cropped_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
                         
-                        # 2. Defaults in case Groq fails
                         final_bin = "GREEN"
                         label_name = "Unknown Safe Waste"
                         
-                        # 3. Interrogate Groq API
-                        if GROQ_API_KEY != "YOUR_GROQ_API_KEY_HERE":
+                        # 2. Interrogate Groq API
+                        if GROQ_API_KEY and GROQ_API_KEY != "YOUR_GROQ_API_KEY_HERE":
                             try:
                                 headers = {
                                     "Authorization": f"Bearer {GROQ_API_KEY}",
                                     "Content-Type": "application/json"
                                 }
-                                prompt = (
-                                    "You are a medical waste classification AI. Identify the item in this image. "
-                                    "Classify it into ONE of these bins: RED (gloves, contaminated plastic), "
-                                    "YELLOW (blood, biohazard), WHITE (syringes, sharps), BLUE (glassware), or GREEN (general). "
-                                    "Reply with EXACTLY ONE WORD: RED, YELLOW, WHITE, BLUE, or GREEN."
-                                )
+                                prompt = "Is this medical item a RED (plastic/glove), YELLOW (biohazard/blood), WHITE (sharp syringe), BLUE (glassware), or GREEN (general) bin item? Reply ONLY with the color word."
                                 groq_payload = {
-                                    "model": GROQ_VISION_MODEL,
+                                    "model": "llama-3.2-11b-vision-preview",
                                     "messages": [
                                         {
                                             "role": "user",
@@ -146,23 +140,40 @@ def detect_frame(payload: FramePayload):
                                             ]
                                         }
                                     ],
-                                    "temperature": 0.1,
+                                    "temperature": 0.0,
                                     "max_tokens": 10
                                 }
                                 
-                                resp = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=groq_payload, timeout=8)
+                                # Increased timeout and added error surfacing
+                                resp = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=groq_payload, timeout=12)
+                                
                                 if resp.status_code == 200:
                                     reply = resp.json()["choices"][0]["message"]["content"].strip().upper()
-                                    # Ensure Groq didn't hallucinate a weird color
-                                    for valid in ["RED", "YELLOW", "WHITE", "BLUE", "GREEN"]:
-                                        if valid in reply:
-                                            final_bin = valid
-                                            label_name = f"Groq AI Assessed"
-                                            break
+                                    if "BLUE" in reply or "GLASS" in reply:
+                                        final_bin = "BLUE"
+                                        label_name = "Groq: Glassware"
+                                    elif "RED" in reply or "GLOVE" in reply:
+                                        final_bin = "RED"
+                                        label_name = "Groq: Plastics"
+                                    elif "YELLOW" in reply or "BLOOD" in reply:
+                                        final_bin = "YELLOW"
+                                        label_name = "Groq: Biohazard"
+                                    elif "WHITE" in reply or "SHARP" in reply or "SYRINGE" in reply:
+                                        final_bin = "WHITE"
+                                        label_name = "Groq: Sharps"
+                                    else:
+                                        label_name = "Groq: General Waste"
+                                else:
+                                    # This will print the exact HTTP error on your app screen!
+                                    label_name = f"Groq Error: HTTP {resp.status_code}"
                             except Exception as e:
+                                # This will print Python connection errors on your app screen!
                                 print(f"Groq API Error: {e}")
-                                # Silently fallback to Green Bin if API fails
-                        
+                                label_name = f"API Timeout/Err"
+                        else:
+                            label_name = "API Key Missing!"
+                            
+                        # Append the final result ONCE and break the loop
                         detections.append({
                             "class_name": label_name,
                             "confidence": 0.99, # High confidence mark indicating LLM override
