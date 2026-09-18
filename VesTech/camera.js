@@ -1,4 +1,4 @@
-//Backend endpoint (modify if running backend on Render or external IP)
+// Backend endpoint (modify if running backend on Render or external IP)
 const BACKEND_URL = "https://bingo-backend-0qbr.onrender.com";
 
 const video = document.getElementById("webcam");
@@ -23,7 +23,7 @@ let currentFacingMode = "environment"; // "user" for laptop, "environment" for p
 let lastFrameTime = performance.now();
 let isRequestPending = false;
 
-//Initialize CCTV Stream
+// Initialize CCTV Stream
 async function initCamera() {
   try {
     statusText.textContent = "ACTIVATING CAMERA...";
@@ -36,21 +36,20 @@ async function initCamera() {
       audio: false
     });
 
-    // 1. Assign the stream to the video element
+    // 1. Assign stream to video element
     video.srcObject = stream;
 
-    // 2. Attach the listener BEFORE calling play() to avoid race conditions
+    // 2. Attach listener BEFORE play() to avoid race conditions
     video.onloadedmetadata = () => {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       document.getElementById("hud-res").textContent = `RES: ${video.videoWidth}x${video.videoHeight}`;
       statusText.textContent = "LIVE CCTV STREAMING";
       
-      // THIS is what actually triggers the backend requests
       startAutoDetectionLoop();
     };
 
-    // 3. Now play the video
+    // 3. Start playback
     await video.play();
 
   } catch (err) {
@@ -59,31 +58,16 @@ async function initCamera() {
   }
 }
 
-    //Match overlay canvas coordinates to the actual video source dimensions
-    video.onloadedmetadata = () => {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      document.getElementById("hud-res").textContent = `RES: ${video.videoWidth}x${video.videoHeight}`;
-      statusText.textContent = "LIVE CCTV STREAMING";
-      startAutoDetectionLoop();
-    };
-  } catch (err) {
-    console.error("Camera access error:", err);
-    statusText.textContent = "CAMERA ERROR / ACCESS DENIED";
-  }
-}
-
-//Automated Continuous Loop
+// Automated Continuous Loop
 function startAutoDetectionLoop() {
   setInterval(async () => {
     if (!isStreaming || isRequestPending || video.paused || video.ended) return;
 
-    // Send frame to backend
     await processCCTVFrame();
-  }, 120); // Polls every 120ms (~8-10 FPS processing loop, fluid canvas rendering)
+  }, 120); // Polls every 120ms (~8 FPS for smooth detection without network saturation)
 }
 
-//Offscreen buffer canvas for lightweight frame encoding
+// Offscreen buffer canvas for lightweight frame encoding
 const offscreenCanvas = document.createElement("canvas");
 const offscreenCtx = offscreenCanvas.getContext("2d");
 
@@ -95,7 +79,7 @@ async function processCCTVFrame() {
   offscreenCanvas.height = video.videoHeight;
   offscreenCtx.drawImage(video, 0, 0);
 
-  //Compress to low-latency JPEG in memory
+  // Compress frame to lightweight JPEG
   const frameBase64 = offscreenCanvas.toDataURL("image/jpeg", 0.65);
 
   try {
@@ -111,10 +95,8 @@ async function processCCTVFrame() {
       updateTelemetry(data.bin_summary, data.detections, data.has_sharps);
     }
   } catch (err) {
-    //If backend is warming up
     statusText.textContent = "BACKEND DISCONNECTED";
   } finally {
-    // Calculate FPS
     const now = performance.now();
     const fps = (1000 / (now - lastFrameTime)).toFixed(1);
     lastFrameTime = now;
@@ -123,19 +105,19 @@ async function processCCTVFrame() {
   }
 }
 
-//Draw real-time bounding boxes directly on top of the live video
+// Draw real-time bounding boxes directly on top of the live video
 function renderBoundingBoxes(detections) {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   detections.forEach((item) => {
     const { box, color, class_name, bin, confidence } = item;
 
-    //Draw outer glowing bounding box
+    // Draw bounding box
     ctx.strokeStyle = color;
     ctx.lineWidth = 3;
     ctx.strokeRect(box.x1, box.y1, box.width, box.height);
 
-    //Draw label pill
+    // Draw label background pill
     const label = `${class_name} [${bin}] ${(confidence * 100).toFixed(0)}%`;
     ctx.font = "bold 14px 'Segoe UI', sans-serif";
     const textWidth = ctx.measureText(label).width;
@@ -143,27 +125,25 @@ function renderBoundingBoxes(detections) {
     ctx.fillStyle = color;
     ctx.fillRect(box.x1, Math.max(0, box.y1 - 24), textWidth + 12, 24);
 
-    //Label text
+    // Draw label text
     ctx.fillStyle = bin === "WHITE" || bin === "YELLOW" ? "#000" : "#FFF";
     ctx.fillText(label, box.x1 + 6, Math.max(16, box.y1 - 7));
   });
 }
 
-//Update Dashboard Numbers & Log
+// Update Dashboard Numbers & Log
 function updateTelemetry(summary, detections, hasSharps) {
   countRed.textContent = summary.RED || 0;
   countYellow.textContent = summary.YELLOW || 0;
   countWhite.textContent = summary.WHITE || 0;
   countBlue.textContent = summary.BLUE || 0;
 
-  //Sharps critical alert overlay
   if (hasSharps) {
     sharpsAlarm.classList.remove("hidden");
   } else {
     sharpsAlarm.classList.add("hidden");
   }
 
-  // Update real-time event log
   if (detections.length === 0) {
     detectionList.innerHTML = `<li class="empty-state">Awaiting objects in CCTV view...</li>`;
   } else {
@@ -181,7 +161,7 @@ function updateTelemetry(summary, detections, hasSharps) {
   }
 }
 
-//Control Event Listeners
+// Control Event Listeners
 toggleStreamBtn.addEventListener("click", () => {
   isStreaming = !isStreaming;
   if (!isStreaming) {
@@ -202,5 +182,5 @@ switchCamBtn.addEventListener("click", async () => {
   await initCamera();
 });
 
-//Launch on page load
+// Launch on page load
 window.addEventListener("DOMContentLoaded", initCamera);
