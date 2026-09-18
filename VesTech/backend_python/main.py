@@ -2,6 +2,7 @@ import os
 import io
 import base64
 import gc
+import shutil
 import numpy as np
 import cv2
 from PIL import Image
@@ -11,28 +12,24 @@ from pydantic import BaseModel
 import torch
 
 torch.set_num_threads(1)
-
 from ultralytics import YOLO
 
-# ==========================================
-# 1. LOAD THE MODEL DIRECTLY
-# ==========================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "model")
+ZIP_PATH = os.path.join(MODEL_DIR, "best.pt.zip")
+PT_PATH = os.path.join(MODEL_DIR, "best_working.pt")
 
-# Because you named the raw PyTorch file "best.pt.zip", we will just tell YOLO to read that exact file.
-PT_PATH = os.path.join(MODEL_DIR, "best.pt.zip")
+# If the zip file exists, copy and rename it to a .pt extension so YOLO accepts it
+if os.path.exists(ZIP_PATH) and not os.path.exists(PT_PATH):
+    print(f">>> Renaming {ZIP_PATH} to {PT_PATH} to bypass extension check...")
+    shutil.copy(ZIP_PATH, PT_PATH)
 
 if not os.path.exists(PT_PATH):
-    print(f"CRITICAL WARNING: Could not find {PT_PATH}. Make sure it is uploaded exactly as 'best.pt.zip' inside the 'model' folder.")
     PT_PATH = "best.pt" # Failsafe
 
-print(f">>> Successfully located and loading YOLO model from: {PT_PATH}")
+print(f">>> Loading YOLO model from: {PT_PATH}")
 model = YOLO(PT_PATH)
 
-# ==========================================
-# 2. FASTAPI SERVER SETUP
-# ==========================================
 app = FastAPI(title="VesTech BinGo Manual Scan")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
@@ -71,7 +68,7 @@ def detect_frame(payload: FramePayload):
         detections = []
         bin_counts = {"RED": 0, "YELLOW": 0, "WHITE": 0, "BLUE": 0, "GREEN": 0}
 
-        # AI DETECTION
+        #AI DETECTION
         for box in results.boxes:
             cls_id = int(box.cls[0])
             cls_name = model.names[cls_id]
@@ -91,7 +88,7 @@ def detect_frame(payload: FramePayload):
                 "box": {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "width": int(x2 - x1), "height": int(y2 - y1)}
             })
 
-        # OPENCV FALLBACK (Safe Waste)
+        #OPENCV FALLBACK
         if len(detections) == 0:
             cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2GRAY)
             blurred = cv2.GaussianBlur(cv_img, (7, 7), 0)
@@ -101,11 +98,9 @@ def detect_frame(payload: FramePayload):
             if contours:
                 contours = sorted(contours, key=cv2.contourArea, reverse=True)
                 screen_area = img_w * img_h
-                
                 for c in contours:
                     x, y, w, h = cv2.boundingRect(c)
                     area = w * h
-                    
                     if 1000 < area < (screen_area * 0.20):
                         detections.append({
                             "class_name": "Safe Waste",
@@ -131,6 +126,4 @@ def detect_frame(payload: FramePayload):
         }
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
