@@ -2,6 +2,7 @@ import os
 import io
 import base64
 import gc
+import zipfile
 import numpy as np
 import cv2
 from PIL import Image
@@ -10,26 +11,34 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import torch
 
+# Prevent Render Free Tier from crashing
 torch.set_num_threads(1)
 
 from ultralytics import YOLO
 
+# ==========================================
+# 1. AUTO-UNZIP LOGIC FOR GITHUB 100MB LIMIT
+# ==========================================
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = os.path.join(BASE_DIR, "model")
+PT_PATH = os.path.join(MODEL_DIR, "best.pt")
+ZIP_PATH = os.path.join(MODEL_DIR, "best.pt.zip")
+
+# If the raw .pt file isn't there, look for the .zip and extract it
+if not os.path.exists(PT_PATH):
+    if os.path.exists(ZIP_PATH):
+        print(f">>> Extracting model from {ZIP_PATH}...")
+        with zipfile.ZipFile(ZIP_PATH, 'r') as zip_ref:
+            zip_ref.extractall(MODEL_DIR)
+        print(">>> Extraction complete.")
+    else:
+        print(f"CRITICAL WARNING: Neither {PT_PATH} nor {ZIP_PATH} found!")
+
+print(f">>> Loading YOLO model from: {PT_PATH}")
+model = YOLO(PT_PATH)
+
 app = FastAPI(title="VesTech BinGo Manual Scan")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
-
-# PER REQUEST: Only looking for best.pt now
-MODEL_CANDIDATES = [
-    os.path.join(os.path.dirname(__file__), "model", "best.pt"),
-    "best.pt"
-]
-
-model_path = next((p for p in MODEL_CANDIDATES if os.path.exists(p)), None)
-if not model_path:
-    print("WARNING: best.pt not found. Ensure the file is uploaded to the model folder.")
-    model_path = "best.pt" # It will likely crash here if the file isn't uploaded
-
-print(f">>> Loading YOLO model from: {model_path}")
-model = YOLO(model_path)
 
 BIN_RULES = {
     "IV_Tube": {"bin": "RED", "color": "#EF4444", "category": "Contaminated Plastics", "action": "Autoclave"},
@@ -62,11 +71,14 @@ def detect_frame(payload: FramePayload):
 
         # High-res inference for photo click mode
         with torch.no_grad():
-            results = model.predict(source=pil_img, conf=0.15, imgsz=640, device='cpu', verbose=False)[0]
+            results = model.predict(source=pil_img, conf=0.10, imgsz=640, device='cpu', verbose=False)[0]
 
         detections = []
         bin_counts = {"RED": 0, "YELLOW": 0, "WHITE": 0, "BLUE": 0, "GREEN": 0}
 
+        # ==========================================
+        # 2. AI DETECTION (Medical Waste)
+        # ==========================================
         for box in results.boxes:
             cls_id = int(box.cls[0])
             cls_name = model.names[cls_id]
@@ -86,7 +98,9 @@ def detect_frame(payload: FramePayload):
                 "box": {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "width": int(x2 - x1), "height": int(y2 - y1)}
             })
 
-        # OPENCV FALLBACK for unrecognized objects (Safe Waste)
+        # ==========================================
+        # 3. OPENCV FALLBACK (Safe Waste)
+        # ==========================================
         if len(detections) == 0:
             cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2GRAY)
             blurred = cv2.GaussianBlur(cv_img, (7, 7), 0)
@@ -101,6 +115,7 @@ def detect_frame(payload: FramePayload):
                     x, y, w, h = cv2.boundingRect(c)
                     area = w * h
                     
+                    # Target objects bigger than dust, but smaller than humans
                     if 1000 < area < (screen_area * 0.20):
                         detections.append({
                             "class_name": "Safe Waste",
@@ -112,6 +127,7 @@ def detect_frame(payload: FramePayload):
                         bin_counts["GREEN"] += 1
                         break 
 
+        # Memory Cleanup
         del pil_img
         del image_bytes
         del results
