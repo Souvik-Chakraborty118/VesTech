@@ -185,7 +185,3 @@ switchCamBtn.addEventListener("click", async () => {
 });
 
 window.addEventListener("DOMContentLoaded", initCamera);
-});
-
-// Launch on page load
-window.addEventListener("DOMContentLoaded", initCamera);
