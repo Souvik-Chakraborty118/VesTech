@@ -19,7 +19,7 @@ const toggleStreamBtn = document.getElementById("toggle-stream-btn");
 const switchCamBtn = document.getElementById("switch-cam-btn");
 
 let isStreaming = true;
-let currentFacingMode = "environment";
+let currentFacingMode = "environment"; // "user" for laptop, "environment" for phone back camera
 let lastFrameTime = performance.now();
 let isRequestPending = false;
 let scaleX = 1;
@@ -50,6 +50,7 @@ async function initCamera() {
     };
 
     await video.play();
+
   } catch (err) {
     console.error("[BinGo CCTV] Camera access error:", err);
     statusText.textContent = "CAMERA ERROR / ACCESS DENIED";
@@ -62,10 +63,10 @@ function startAutoDetectionLoop() {
   setInterval(async () => {
     if (!isStreaming || isRequestPending || video.paused || video.ended) return;
     await processCCTVFrame();
-  }, 200); // 5 FPS polling to prevent saturating the network/Render CPU
+  }, 250); // Polling every 250ms (4 FPS) to avoid crashing Render's Free CPU
 }
 
-// Offscreen buffer canvas (scaled down to 640px width for fast cloud inference)
+// Offscreen buffer canvas 
 const offscreenCanvas = document.createElement("canvas");
 const offscreenCtx = offscreenCanvas.getContext("2d");
 
@@ -74,23 +75,24 @@ async function processCCTVFrame() {
 
   isRequestPending = true;
 
-  // Downscale to 640px wide for ~25KB payload instead of 200KB
-  const targetWidth = 640;
+  // DOWNGRADE to 480px wide. YOLO works fine at this resolution and Render will process it 2x faster
+  const targetWidth = 480;
   const targetHeight = Math.round((video.videoHeight / video.videoWidth) * targetWidth);
   
   offscreenCanvas.width = targetWidth;
   offscreenCanvas.height = targetHeight;
   offscreenCtx.drawImage(video, 0, 0, targetWidth, targetHeight);
 
-  // Coordinate ratio to scale boxes back up to display video size
+  // Coordinate ratio to scale boxes back up to display canvas size
   scaleX = canvas.width / targetWidth;
   scaleY = canvas.height / targetHeight;
 
+  // Compress to lightweight JPEG
   const frameBase64 = offscreenCanvas.toDataURL("image/jpeg", 0.6);
 
-  // 8-second timeout so a slow request never locks up the camera
+  // EXTENDED TIMEOUT: Give Render a full 60 seconds to wake up from cold start
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  const timeoutId = setTimeout(() => controller.abort(), 60000);
 
   try {
     const response = await fetch(`${BACKEND_URL}/detect_frame`, {
@@ -112,8 +114,8 @@ async function processCCTVFrame() {
     }
   } catch (err) {
     if (err.name === "AbortError") {
-      console.warn("[BinGo CCTV] Request timed out. Waking up Render instance...");
-      statusText.textContent = "WAKING UP SERVER...";
+      console.warn("[BinGo CCTV] Request timed out after 60s. Server might be struggling.");
+      statusText.textContent = "SERVER TIMEOUT...";
     } else {
       console.error("[BinGo CCTV] Network error:", err);
       statusText.textContent = "BACKEND DISCONNECTED";
@@ -134,7 +136,7 @@ function renderBoundingBoxes(detections) {
   detections.forEach((item) => {
     const { box, color, class_name, bin, confidence } = item;
 
-    // Scale coordinates from 640px model space back to display canvas size
+    // Scale coordinates from 480px model space back to display canvas size
     const x1 = box.x1 * scaleX;
     const y1 = box.y1 * scaleY;
     const width = box.width * scaleX;
