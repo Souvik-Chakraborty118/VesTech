@@ -1,11 +1,17 @@
-import base64
-import io
 import os
-from fastapi import FastAPI, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
-from ultralytics import YOLO
+import io
+import base64
+import numpy as np
+import cv2
 from PIL import Image
-app = FastAPI()
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from ultralytics import YOLO
+
+app = FastAPI(title="VesTech BinGo Live CCTV Detection Server")
+
+#Enable CORS for frontend integration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,70 +19,154 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "model", "medical_waste_yolov8_best.pt")
-model = YOLO(MODEL_PATH)
-#Biomedical Waste Color Coding Logic
-def assign_waste_bin(detected_class):
-    label = detected_class.lower()
-    
-    #YELLOW
-    if any(x in label for x in ["blood", "organ", "tissue", "cotton", "anatomical", "bandage"]):
-        return "🟡 YELLOW BIN", "Deep Burial / Incineration"   
-    #RED
-    elif any(x in label for x in ["tube", "catheter", "syringe", "iv", "glove", "plastic"]):
-        return "🔴 RED BIN", "Autoclaving & Recycling"      
-    #WHITE
-    elif any(x in label for x in ["needle", "scalpel", "blade", "sharp"]):
-        return "⚪ WHITE BIN", "Puncture-proof container -> Shredding"        
-    #BLUE
-    elif any(x in label for x in ["glass", "vial", "ampoule", "bottle"]):
-        return "🔵 BLUE BIN", "Disinfection & Recycling"      
-    #Default fallback
-    else:
-        return f"Unknown: {detected_class.upper()}", "Manual Inspection Required"
 
-@app.post("/api/scan")
-async def scan_waste(file: UploadFile = File(None), image: UploadFile = File(None)):
+#Automatic Model Path Resolution
+MODEL_CANDIDATES = [
+    os.path.join(os.path.dirname(__file__), "model", "best.pt"),
+    os.path.join(os.path.dirname(__file__), "model", "medical_waste_yolov8_best.pt"),
+    os.path.join(os.path.dirname(__file__), "best.pt"),
+    "best.pt"
+]
+
+model_path = next((p for p in MODEL_CANDIDATES if os.path.exists(p)), None)
+if not model_path:
+    # Default fallback to model folder
+    model_path = os.path.join(os.path.dirname(__file__), "model", "medical_waste_yolov8_best.pt")
+
+print(f">>> Loading YOLO model from: {model_path}")
+model = YOLO(model_path)
+
+#Biomedical Segregation Mapping & Color Rules
+BIN_RULES = {
+    "IV_Tube": {
+        "bin": "RED",
+        "color": "#EF4444",
+        "category": "Contaminated Recyclable Plastics",
+        "action": "Route to Autoclave / Shredding"
+    },
+    "Medical_Glove": {
+        "bin": "RED",
+        "color": "#EF4444",
+        "category": "Contaminated Recyclable Plastics",
+        "action": "Route to Autoclave / Shredding"
+    },
+    "Blood_Bag": {
+        "bin": "YELLOW",
+        "color": "#FACC15",
+        "category": "Infectious Biohazard",
+        "action": "Route to High-Temp Incineration"
+    },
+    "Blood_Soiled": {
+        "bin": "YELLOW",
+        "color": "#FACC15",
+        "category": "Infectious Biohazard",
+        "action": "Route to High-Temp Incineration"
+    },
+    "Anatomical_Tissue": {
+        "bin": "YELLOW",
+        "color": "#FACC15",
+        "category": "Pathological Waste",
+        "action": "Deep Burial / Incineration"
+    },
+    "Syringe_Sharps": {
+        "bin": "WHITE",
+        "color": "#F8FAFC",
+        "category": "Puncture-Proof Sharps",
+        "action": "Sharps Pit / Autoclave Encapsulation"
+    },
+    "Glass_Ampoule": {
+        "bin": "BLUE",
+        "color": "#3B82F6",
+        "category": "Disinfected Glassware",
+        "action": "Sodium Hypochlorite Decontamination"
+    },
+    "Broken_Glass": {
+        "bin": "BLUE",
+        "color": "#3B82F6",
+        "category": "Disinfected Glassware",
+        "action": "Sodium Hypochlorite Decontamination"
+    }
+}
+
+class FramePayload(BaseModel):
+    image: str  # Base64 data URL from browser canvas
+
+@app.get("/")
+def health_check():
+    return {
+        "status": "online",
+        "service": "VesTech BinGo CCTV Backend",
+        "model_loaded": os.path.basename(model_path),
+        "total_classes": len(model.names)
+    }
+
+@app.post("/detect_frame")
+async def detect_frame(payload: FramePayload):
+    """
+    Continuous CCTV detection endpoint:
+    Decodes frame from RAM, runs inference, and returns real-time bbox coordinates.
+    """
     try:
-        active_file = file or image
-        if not active_file:
-            return {"error": "No image file provided."}
+        # Strip header if present: 'data:image/jpeg;base64,...'
+        encoded_data = payload.image
+        if "," in encoded_data:
+            encoded_data = encoded_data.split(",")[1]
 
-        contents = await active_file.read()
-        image_obj = Image.open(io.BytesIO(contents)).convert("RGB")
-        
-        # Make the AI more sensitive (conf=0.15 means it will report matches it is at least 15% sure of)
-        results = model(image_obj, conf=0.15) 
-        
-        category = "Safe Waste / Not Recognized"
-        confidence = 97
-        action = "Standard Disposal"
-        
-        if len(results[0].boxes) > 0:
-            best_box = results[0].boxes[0]
-            cls_id = int(best_box.cls[0])
-            confidence = float(best_box.conf[0])
-            raw_class_name = model.names[cls_id]
-            
-            #Raw AI name to the official Color Bin
-            category, action = assign_waste_bin(raw_class_name)
+        image_bytes = base64.b64decode(encoded_data)
+        pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
+        frame_np = np.array(pil_img)
+        img_h, img_w, _ = frame_np.shape
 
-        #Draw Bounding Boxes
-        annotated_frame = results[0].plot()
-        annotated_frame = annotated_frame[..., ::-1] # BGR to RGB
-        annotated_pil = Image.fromarray(annotated_frame)
-        
-        buffered = io.BytesIO()
-        annotated_pil.save(buffered, format="JPEG")
-        img_base64 = base64.b64encode(buffered.getvalue()).decode("utf-8")
-        
+        results = model.predict(source=frame_np, conf=0.25, imgsz=640, verbose=False)[0]
+
+        detections = []
+        bin_counts = {"RED": 0, "YELLOW": 0, "WHITE": 0, "BLUE": 0}
+
+        for box in results.boxes:
+            cls_id = int(box.cls[0])
+            cls_name = model.names[cls_id]
+            conf = float(box.conf[0])
+            x1, y1, x2, y2 = box.xyxy[0].tolist()
+
+            rule = BIN_RULES.get(cls_name, {
+                "bin": "GENERAL",
+                "color": "#10B981",
+                "category": "General Waste",
+                "action": "Municipal Solid Waste Bin"
+            })
+
+            bin_name = rule["bin"]
+            if bin_name in bin_counts:
+                bin_counts[bin_name] += 1
+
+            detections.append({
+                "class_name": cls_name,
+                "confidence": round(conf, 2),
+                "bin": bin_name,
+                "color": rule["color"],
+                "category": rule["category"],
+                "action": rule["action"],
+                "box": {
+                    "x1": int(x1),
+                    "y1": int(y1),
+                    "x2": int(x2),
+                    "y2": int(y2),
+                    "width": int(x2 - x1),
+                    "height": int(y2 - y1)
+                }
+            })
+
         return {
-            "category": category,
-            "confidence": round(confidence * 100, 2),
-            "action": action,
-            "image": img_base64 
+            "success": True,
+            "frame_dimensions": {"width": img_w, "height": img_h},
+            "detections": detections,
+            "bin_summary": bin_counts,
+            "has_sharps": bin_counts["WHITE"] > 0
         }
-        
+
     except Exception as e:
-        return {"error": str(e)}
+        raise HTTPException(status_code=400, detail=str(e))
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
