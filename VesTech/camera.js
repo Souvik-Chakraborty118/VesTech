@@ -41,7 +41,7 @@ async function initCamera() {
       document.getElementById("hud-res").textContent = `RES: ${video.videoWidth}x${video.videoHeight}`;
       statusText.textContent = "LIVE CCTV STREAMING";
       
-      // Start the sequential loop
+      // FIXED: Call the correct sequential loop function
       runDetectionLoop();
     };
 
