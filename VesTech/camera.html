@@ -1,65 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BinGo AI Scanner</title>
-    <style>
-        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #121212; color: #fff; display: flex; flex-direction: column; align-items: center; min-height: 100vh; } 
-        /* Top Navigation */
-        .top-nav { width: 100%; padding: 15px 20px; box-sizing: border-box; display: flex; justify-content: space-between; align-items: center; background: rgba(20, 20, 20, 0.9); border-bottom: 1px solid #333; }
-        .back-btn { background: #333; color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s; text-decoration: none; display: inline-block;}
-        .back-btn:hover { background: #ff4d6d; }
-        .logo { margin: 0; font-size: 1.2rem; color: #00ffcc; text-transform: uppercase; letter-spacing: 2px;}
-        /* Scanner Feed */
-        .scanner-container { position: relative; width: 90%; max-width: 500px; margin: 30px auto; border-radius: 16px; overflow: hidden; border: 3px solid #333; box-shadow: 0 0 20px rgba(0, 0, 0, 0.5); background: #000; aspect-ratio: 3/4;}
-        video, #result-image { width: 100%; height: 100%; object-fit: cover; display: block; } 
-        /* Laser Animation */
-        .scan-laser { position: absolute; top: 0; left: 0; width: 100%; height: 3px; background: #00ffcc; box-shadow: 0 0 15px #00ffcc, 0 0 30px #00ffcc; animation: scan 2s infinite linear; display: none; z-index: 10; }
-        @keyframes scan { 0% { top: 0%; opacity: 0;} 10% {opacity: 1;} 90% {opacity: 1;} 100% { top: 100%; opacity: 0;} }  
-        /* Controls & Results */
-        .controls { text-align: center; margin-bottom: 20px; }
-        .scan-btn { background: linear-gradient(135deg, #ff4d6d 0%, #ff2a55 100%); color: white; font-size: 1.2rem; font-weight: bold; padding: 15px 40px; border: none; border-radius: 30px; cursor: pointer; box-shadow: 0 8px 15px rgba(255, 77, 109, 0.4); transition: 0.3s; }
-        .scan-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 20px rgba(255, 77, 109, 0.6); }
-        .scan-btn:disabled { background: #555; box-shadow: none; cursor: not-allowed; transform: none;}
-        .result-panel { width: 90%; max-width: 500px; background: #1e1e1e; border-radius: 12px; padding: 20px; box-sizing: border-box; border-left: 5px solid #00ffcc; margin-bottom: 30px;}
-        .result-panel h3 { margin-top: 0; color: #aaa; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px;}
-        .data-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 1.1rem;}
-        .data-row span { color: #888; }
-        .data-row strong { color: #fff; }
-        .high-confidence { color: #00ffcc !important; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VesTech BinGo — Live CCTV Auto-Segregation</title>
+  <link rel="stylesheet" href="camera.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
 </head>
 <body>
-    <div class="top-nav">
-        <a href="dashboard.html" class="back-btn">&#8592; Dashboard</a>
-        <h2 class="logo">BinGo AI</h2>
+
+  <!-- Top Navigation Header -->
+  <header class="header">
+    <div class="logo">
+      <img src="Vestech_logo.jpeg" alt="VesTech Logo" />
+      <span>VesTech <strong>BinGo CCTV</strong></span>
+    </div>
+    <div class="cctv-status-badge">
+      <span class="live-dot"></span> <span id="status-text">CONNECTING CCTV FEED...</span>
+    </div>
+    <nav class="nav">
+      <a href="dashboard.html">Dashboard</a>
+      <a href="technology.html">Waste Guidelines</a>
+    </nav>
+  </header>
+
+  <main class="cctv-container">
+    
+    <!-- Video & Real-time Canvas Stage -->
+    <div class="video-stage">
+      <video id="webcam" autoplay playsinline muted></video>
+      <canvas id="cctv-overlay"></canvas>
+      
+      <!-- Heads-Up Display (HUD) Overlaid on CCTV Video -->
+      <div class="hud-overlay">
+        <div class="hud-top">
+          <span class="hud-item"><i class="fa-solid fa-video"></i> AUTO SCAN: ACTIVE</span>
+          <span class="hud-item" id="hud-fps">FPS: --</span>
+          <span class="hud-item" id="hud-res">RES: 1280x720</span>
+        </div>
+        <div id="sharps-alarm" class="sharps-alert hidden">
+          <i class="fa-solid fa-triangle-exclamation"></i> CRITICAL: SHARPS DETECTED — WHITE BIN REQUIRED
+        </div>
+      </div>
     </div>
 
-    <div class="scanner-container">
-        <video id="webcam" autoplay playsinline></video>
-        <img id="result-image" style="display: none;" />
-        <div id="scan-laser" class="scan-laser"></div>
-    </div>
-    <div class="controls">
-        <button id="scanBtn" class="scan-btn">START SCAN</button>
-    </div>
+    <!-- Live Segregation Control & Telemetry Panel -->
+    <aside class="sidebar-panel">
+      <h2>Live Telemetry</h2>
+      <p class="panel-desc">Automatic object bounding boxes and bin assignments render in real-time without capturing images.</p>
 
-    <div class="result-panel">
-        <h3>Analysis Output</h3>
-        <div class="data-row">
-            <span>Category:</span>
-            <strong id="res-category">Waiting...</strong>
+      <!-- Bin Counter Cards -->
+      <div class="bin-grid">
+        <div class="bin-card red">
+          <div class="bin-header">
+            <span>🔴 Red Bin</span>
+            <span class="badge" id="count-red">0</span>
+          </div>
+          <small>Contaminated Plastics</small>
         </div>
-        <div class="data-row">
-            <span>Confidence:</span>
-            <strong id="res-confidence">--</strong>
+
+        <div class="bin-card yellow">
+          <div class="bin-header">
+            <span>🟡 Yellow Bin</span>
+            <span class="badge" id="count-yellow">0</span>
+          </div>
+          <small>Biohazard / Tissue / Blood</small>
         </div>
-        <div class="data-row">
-            <span>System Action:</span>
-            <strong id="res-action">--</strong>
+
+        <div class="bin-card white">
+          <div class="bin-header">
+            <span>⚪ White Bin</span>
+            <span class="badge" id="count-white">0</span>
+          </div>
+          <small>Puncture-Proof Sharps</small>
         </div>
-    </div>
-    <script src="camera.js"></script>
+
+        <div class="bin-card blue">
+          <div class="bin-header">
+            <span>🔵 Blue Bin</span>
+            <span class="badge" id="count-blue">0</span>
+          </div>
+          <small>Disinfected Glassware</small>
+        </div>
+      </div>
+
+      <!-- Live Detection Event Log -->
+      <div class="event-log-box">
+        <h3>Active Visual Triggers</h3>
+        <ul id="detection-list">
+          <li class="empty-state">Awaiting objects in CCTV view...</li>
+        </ul>
+      </div>
+
+      <!-- Camera Source Toggle -->
+      <div class="control-actions">
+        <button id="toggle-stream-btn" class="btn primary">
+          <i class="fa-solid fa-pause"></i> Pause CCTV
+        </button>
+        <button id="switch-cam-btn" class="btn secondary">
+          <i class="fa-solid fa-rotate"></i> Flip Camera
+        </button>
+      </div>
+    </aside>
+
+  </main>
+
+  <script src="camera.js"></script>
 </body>
 </html>
