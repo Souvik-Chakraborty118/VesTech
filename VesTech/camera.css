@@ -92,6 +92,8 @@ body {
   justify-content: center;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
   border: 1px solid #1e293b;
+  aspect-ratio: 16 / 9;
+  min-height: 320px;
 }
 
 #webcam {
@@ -106,7 +108,7 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  object-fit: contain; /* Keeps canvas coordinates aligned with the letterboxed video */
+  object-fit: contain;
   pointer-events: none;
 }
 
@@ -124,6 +126,7 @@ body {
 .hud-top {
   display: flex;
   gap: 12px;
+  flex-wrap: wrap;
 }
 
 .hud-item {
