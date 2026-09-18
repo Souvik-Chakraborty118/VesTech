@@ -36,8 +36,28 @@ async function initCamera() {
       audio: false
     });
 
+    // 1. Assign the stream to the video element
     video.srcObject = stream;
+
+    // 2. Attach the listener BEFORE calling play() to avoid race conditions
+    video.onloadedmetadata = () => {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      document.getElementById("hud-res").textContent = `RES: ${video.videoWidth}x${video.videoHeight}`;
+      statusText.textContent = "LIVE CCTV STREAMING";
+      
+      // THIS is what actually triggers the backend requests
+      startAutoDetectionLoop();
+    };
+
+    // 3. Now play the video
     await video.play();
+
+  } catch (err) {
+    console.error("Camera access error:", err);
+    statusText.textContent = "CAMERA ERROR / ACCESS DENIED";
+  }
+}
 
     //Match overlay canvas coordinates to the actual video source dimensions
     video.onloadedmetadata = () => {
