@@ -14,18 +14,19 @@ torch.set_num_threads(1)
 
 from ultralytics import YOLO
 
-app = FastAPI(title="VesTech BinGo Live CCTV")
+app = FastAPI(title="VesTech BinGo Manual Scan")
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
+# PER REQUEST: Only looking for best.pt now
 MODEL_CANDIDATES = [
-    os.path.join(os.path.dirname(__file__), "model", "medical_waste_yolov8_best.pt"),
     os.path.join(os.path.dirname(__file__), "model", "best.pt"),
     "best.pt"
 ]
 
 model_path = next((p for p in MODEL_CANDIDATES if os.path.exists(p)), None)
 if not model_path:
-    model_path = "best.pt"
+    print("WARNING: best.pt not found. Ensure the file is uploaded to the model folder.")
+    model_path = "best.pt" # It will likely crash here if the file isn't uploaded
 
 print(f">>> Loading YOLO model from: {model_path}")
 model = YOLO(model_path)
@@ -59,8 +60,9 @@ def detect_frame(payload: FramePayload):
         pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_w, img_h = pil_img.size
 
+        # High-res inference for photo click mode
         with torch.no_grad():
-            results = model.predict(source=pil_img, conf=0.10, imgsz=640, device='cpu', verbose=False)[0]
+            results = model.predict(source=pil_img, conf=0.15, imgsz=640, device='cpu', verbose=False)[0]
 
         detections = []
         bin_counts = {"RED": 0, "YELLOW": 0, "WHITE": 0, "BLUE": 0, "GREEN": 0}
@@ -83,8 +85,8 @@ def detect_frame(payload: FramePayload):
                 "color": rule["color"],
                 "box": {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "width": int(x2 - x1), "height": int(y2 - y1)}
             })
-            
-        # 2. SMART OPENCV FALLBACK
+
+        # OPENCV FALLBACK for unrecognized objects (Safe Waste)
         if len(detections) == 0:
             cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2GRAY)
             blurred = cv2.GaussianBlur(cv_img, (7, 7), 0)
@@ -92,7 +94,6 @@ def detect_frame(payload: FramePayload):
             contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
             if contours:
-                # Sort all shapes from largest to smallest
                 contours = sorted(contours, key=cv2.contourArea, reverse=True)
                 screen_area = img_w * img_h
                 
@@ -100,8 +101,6 @@ def detect_frame(payload: FramePayload):
                     x, y, w, h = cv2.boundingRect(c)
                     area = w * h
                     
-                    # Rule: Object must be bigger than a speck of dust (>1000px)
-                    # BUT smaller than a human body (<20% of the screen)
                     if 1000 < area < (screen_area * 0.20):
                         detections.append({
                             "class_name": "Safe Waste",
@@ -111,7 +110,7 @@ def detect_frame(payload: FramePayload):
                             "box": {"x1": int(x), "y1": int(y), "x2": int(x+w), "y2": int(y+h), "width": int(w), "height": int(h)}
                         })
                         bin_counts["GREEN"] += 1
-                        break # Stop after boxing the first valid object
+                        break 
 
         del pil_img
         del image_bytes
