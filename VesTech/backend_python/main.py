@@ -3,6 +3,7 @@ import io
 import base64
 import gc
 import numpy as np
+import cv2
 from PIL import Image
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -58,13 +59,13 @@ def detect_frame(payload: FramePayload):
         pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_w, img_h = pil_img.size
 
-        # RAM SAVER + RESOLUTION BUMP + CONFIDENCE DROP
         with torch.no_grad():
             results = model.predict(source=pil_img, conf=0.10, imgsz=640, device='cpu', verbose=False)[0]
 
         detections = []
-        bin_counts = {"RED": 0, "YELLOW": 0, "WHITE": 0, "BLUE": 0}
+        bin_counts = {"RED": 0, "YELLOW": 0, "WHITE": 0, "BLUE": 0, "GREEN": 0}
 
+        # 1. AI DETECTION (Medical Waste)
         for box in results.boxes:
             cls_id = int(box.cls[0])
             cls_name = model.names[cls_id]
@@ -83,6 +84,32 @@ def detect_frame(payload: FramePayload):
                 "color": rule["color"],
                 "box": {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "width": int(x2 - x1), "height": int(y2 - y1)}
             })
+
+        # 2. OPENCV FALLBACK (Safe Waste / Unknown Objects)
+        # If YOLO found nothing, scan for any physical object in the frame
+        if len(detections) == 0:
+            cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2GRAY)
+            blurred = cv2.GaussianBlur(cv_img, (15, 15), 0)
+            edges = cv2.Canny(blurred, 30, 150)
+            contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            
+            if contours:
+                # Sort by largest shape first
+                contours = sorted(contours, key=cv2.contourArea, reverse=True)
+                for c in contours:
+                    area = cv2.contourArea(c)
+                    # Ignore tiny camera noise, and ignore massive background shapes
+                    if 3000 < area < (img_w * img_h * 0.5):
+                        x, y, w, h = cv2.boundingRect(c)
+                        detections.append({
+                            "class_name": "Safe Waste (Unknown)",
+                            "confidence": 1.0,
+                            "bin": "GREEN",
+                            "color": "#10B981",
+                            "box": {"x1": int(x), "y1": int(y), "x2": int(x+w), "y2": int(y+h), "width": int(w), "height": int(h)}
+                        })
+                        bin_counts["GREEN"] += 1
+                        break # Only box the single largest unrecognized object
 
         del pil_img
         del image_bytes
