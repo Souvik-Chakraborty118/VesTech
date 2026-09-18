@@ -83,31 +83,35 @@ def detect_frame(payload: FramePayload):
                 "color": rule["color"],
                 "box": {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "width": int(x2 - x1), "height": int(y2 - y1)}
             })
-
-        # 2. HYPER-AGGRESSIVE OPENCV FALLBACK
+            
+        # 2. SMART OPENCV FALLBACK
         if len(detections) == 0:
             cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2GRAY)
             blurred = cv2.GaussianBlur(cv_img, (7, 7), 0)
-            
-            # High sensitivity edge detection
             edges = cv2.Canny(blurred, 15, 50) 
             contours, _ = cv2.findContours(edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             
             if contours:
-                # Find the absolute largest physical shape on the screen
-                largest_contour = max(contours, key=cv2.contourArea)
-                x, y, w, h = cv2.boundingRect(largest_contour)
+                # Sort all shapes from largest to smallest
+                contours = sorted(contours, key=cv2.contourArea, reverse=True)
+                screen_area = img_w * img_h
                 
-                # As long as it's not a microscopic speck of dust, bound it.
-                if w * h > 1000:
-                    detections.append({
-                        "class_name": "Safe Waste",
-                        "confidence": 1.0,
-                        "bin": "GREEN",
-                        "color": "#10B981",
-                        "box": {"x1": int(x), "y1": int(y), "x2": int(x+w), "y2": int(y+h), "width": int(w), "height": int(h)}
-                    })
-                    bin_counts["GREEN"] += 1
+                for c in contours:
+                    x, y, w, h = cv2.boundingRect(c)
+                    area = w * h
+                    
+                    # Rule: Object must be bigger than a speck of dust (>1000px)
+                    # BUT smaller than a human body (<20% of the screen)
+                    if 1000 < area < (screen_area * 0.20):
+                        detections.append({
+                            "class_name": "Safe Waste",
+                            "confidence": 1.0,
+                            "bin": "GREEN",
+                            "color": "#10B981",
+                            "box": {"x1": int(x), "y1": int(y), "x2": int(x+w), "y2": int(y+h), "width": int(w), "height": int(h)}
+                        })
+                        bin_counts["GREEN"] += 1
+                        break # Stop after boxing the first valid object
 
         del pil_img
         del image_bytes
