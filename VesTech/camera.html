@@ -10,7 +10,6 @@
 <body>
   <header class="header">
     <div class="logo">
-      <!-- Replaced the icon with your actual logo image -->
       <img src="Vestech_logo.jpeg" alt="VesTech Logo" class="logo-img">
       <h2><strong>BinGO</strong> by VesTech</h2>
     </div>
@@ -22,7 +21,11 @@
 
   <main class="cctv-container">
     <section class="video-stage">
+      <!-- Webcam Video -->
       <video id="webcam" autoplay playsinline></video>
+      <!-- Uploaded Image Preview -->
+      <img id="uploaded-preview" class="hidden" alt="Uploaded Image">
+      <!-- Bounding Box Canvas -->
       <canvas id="cctv-overlay"></canvas>
       
       <!-- HUD Overlay -->
@@ -39,15 +42,21 @@
       </div>
     </section>
 
-   <aside class="sidebar-panel">
-      
+    <aside class="sidebar-panel">
       <!-- CONTROLS MOVED TO TOP -->
-      <div id="status-text" class="status-message">CAMERA READY. CLICK BUTTON TO SCAN.</div>
+      <div id="status-text" class="status-message">CAMERA READY. CLICK SCAN OR UPLOAD.</div>
 
       <div class="control-actions">
         <button id="toggle-stream-btn" class="btn primary">
-          <i class="fa-solid fa-camera"></i> Take Photo & Scan
+          <i class="fa-solid fa-camera"></i> Scan
         </button>
+        
+        <!-- NEW UPLOAD BUTTON -->
+        <button id="upload-btn" class="btn primary" style="background: #8b5cf6;">
+          <i class="fa-solid fa-upload"></i> Upload
+        </button>
+        <input type="file" id="file-upload" accept="image/*" class="hidden">
+
         <button id="switch-cam-btn" class="btn secondary" title="Flip Camera">
           <i class="fa-solid fa-camera-rotate"></i>
         </button>
