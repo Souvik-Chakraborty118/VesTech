@@ -63,7 +63,7 @@ def detect_frame(payload: FramePayload):
         img_w, img_h = pil_img.size
 
         with torch.no_grad():
-            results = model.predict(source=pil_img, conf=0.45, imgsz=640, device='cpu', verbose=False)[0]
+            results = model.predict(source=pil_img, conf=0.55, imgsz=640, device='cpu', verbose=False)[0]
 
         detections = []
         bin_counts = {"RED": 0, "YELLOW": 0, "WHITE": 0, "BLUE": 0, "GREEN": 0}
