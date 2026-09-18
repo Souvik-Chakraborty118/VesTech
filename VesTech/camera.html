@@ -1,110 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VesTech BinGo — Live CCTV Auto-Segregation</title>
-  <link rel="stylesheet" href="camera.css" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VesTech BinGo | Smart Scanner</title>
+  <link rel="stylesheet" href="camera.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
-  <!-- Top Navigation Header -->
   <header class="header">
     <div class="logo">
-      <img src="Vestech_logo.jpeg" alt="VesTech Logo" />
-      <span>VesTech <strong>BinGo CCTV</strong></span>
+      <div class="logo-icon"><i class="fa-solid fa-recycle"></i></div>
+      <h2>VesTech <strong>BinGo</strong> AI Scanner</h2>
     </div>
     <div class="cctv-status-badge">
-      <span class="live-dot"></span> <span id="status-text">CONNECTING CCTV FEED...</span>
+      <div class="live-dot" style="background:#38bdf8;"></div>
+      <span>MANUAL HIGH-RES MODE</span>
     </div>
-    <nav class="nav">
-      <a href="dashboard.html">Dashboard</a>
-      <a href="technology.html">Waste Guidelines</a>
-    </nav>
   </header>
 
   <main class="cctv-container">
-    
-    <!-- Video & Real-time Canvas Stage -->
-    <div class="video-stage">
-      <video id="webcam" autoplay playsinline muted></video>
+    <section class="video-stage">
+      <video id="webcam" autoplay playsinline></video>
       <canvas id="cctv-overlay"></canvas>
       
-      <!-- Heads-Up Display (HUD) Overlaid on CCTV Video -->
+      <!-- HUD Overlay -->
       <div class="hud-overlay">
         <div class="hud-top">
-          <span class="hud-item"><i class="fa-solid fa-video"></i> AUTO SCAN: ACTIVE</span>
-          <span class="hud-item" id="hud-fps">FPS: --</span>
-          <span class="hud-item" id="hud-res">RES: 1280x720</span>
-        </div>
-        <div id="sharps-alarm" class="sharps-alert hidden">
-          <i class="fa-solid fa-triangle-exclamation"></i> CRITICAL: SHARPS DETECTED — WHITE BIN REQUIRED
+          <span class="hud-item" id="hud-fps">FPS: MANUAL</span>
+          <span class="hud-item" id="hud-res">RES: --</span>
         </div>
       </div>
-    </div>
 
-    <!-- Live Segregation Control & Telemetry Panel -->
+      <!-- Critical Sharps Alert -->
+      <div id="sharps-alarm" class="sharps-alert hidden">
+        <i class="fa-solid fa-triangle-exclamation"></i> SHARPS DETECTED - PROCEED WITH CAUTION
+      </div>
+    </section>
+
     <aside class="sidebar-panel">
-      <h2>Live Telemetry</h2>
-      <p class="panel-desc">Automatic object bounding boxes and bin assignments render in real-time without capturing images.</p>
+      <div class="panel-header">
+        <h2>Live Telemetry</h2>
+        <p class="panel-desc">AI object classification and BMW bin routing.</p>
+      </div>
 
-      <!-- Bin Counter Cards -->
+      <!-- Bins Grid -->
       <div class="bin-grid">
         <div class="bin-card red">
           <div class="bin-header">
-            <span>🔴 Red Bin</span>
+            <span><span class="dot" style="background:#ef4444;"></span> Red Bin</span>
             <span class="badge" id="count-red">0</span>
           </div>
           <small>Contaminated Plastics</small>
         </div>
-
         <div class="bin-card yellow">
           <div class="bin-header">
-            <span>🟡 Yellow Bin</span>
+            <span><span class="dot" style="background:#facc15;"></span> Yellow Bin</span>
             <span class="badge" id="count-yellow">0</span>
           </div>
-          <small>Biohazard / Tissue / Blood</small>
+          <small>Biohazard / Blood</small>
         </div>
-
         <div class="bin-card white">
           <div class="bin-header">
-            <span>⚪ White Bin</span>
+            <span><span class="dot" style="background:#f8fafc;"></span> White Bin</span>
             <span class="badge" id="count-white">0</span>
           </div>
           <small>Puncture-Proof Sharps</small>
         </div>
-
         <div class="bin-card blue">
           <div class="bin-header">
-            <span>🔵 Blue Bin</span>
+            <span><span class="dot" style="background:#3b82f6;"></span> Blue Bin</span>
             <span class="badge" id="count-blue">0</span>
           </div>
           <small>Disinfected Glassware</small>
         </div>
+        
+        <!-- NEW: SAFE WASTE FALLBACK BIN -->
+        <div class="bin-card green">
+          <div class="bin-header">
+            <span><span class="dot" style="background:#10b981;"></span> Green Bin</span>
+            <span class="badge" id="count-green">0</span>
+          </div>
+          <small>Safe Waste (OpenCV Fallback)</small>
+        </div>
       </div>
 
-      <!-- Live Detection Event Log -->
+      <!-- Event Log -->
       <div class="event-log-box">
         <h3>Active Visual Triggers</h3>
         <ul id="detection-list">
-          <li class="empty-state">Awaiting objects in CCTV view...</li>
+          <li class="empty-state">Awaiting scan...</li>
         </ul>
       </div>
 
-      <!-- Camera Source Toggle -->
+      <div id="status-text" class="status-message">CAMERA READY. CLICK BUTTON TO SCAN.</div>
+
+      <!-- Controls -->
       <div class="control-actions">
         <button id="toggle-stream-btn" class="btn primary">
-          <i class="fa-solid fa-pause"></i> Pause CCTV
+          <i class="fa-solid fa-camera"></i> Take Photo & Scan
         </button>
-        <button id="switch-cam-btn" class="btn secondary">
-          <i class="fa-solid fa-rotate"></i> Flip Camera
+        <button id="switch-cam-btn" class="btn secondary" title="Flip Camera">
+          <i class="fa-solid fa-camera-rotate"></i>
         </button>
       </div>
+      
+      <!-- Smart Feature: Audit Export -->
+      <button onclick="window.print()" class="btn secondary print-btn">
+        <i class="fa-solid fa-file-pdf"></i> Export Compliance Report
+      </button>
+
     </aside>
-
   </main>
-
+  
   <script src="camera.js"></script>
 </body>
 </html>
