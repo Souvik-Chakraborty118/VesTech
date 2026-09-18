@@ -1,4 +1,3 @@
-// Backend endpoint
 const BACKEND_URL = "https://bingo-backend-0qbr.onrender.com";
 
 const video = document.getElementById("webcam");
@@ -24,7 +23,6 @@ let lastFrameTime = performance.now();
 let scaleX = 1;
 let scaleY = 1;
 
-// Initialize CCTV Stream
 async function initCamera() {
   try {
     statusText.textContent = "ACTIVATING CAMERA...";
@@ -40,8 +38,6 @@ async function initCamera() {
       canvas.height = video.videoHeight;
       document.getElementById("hud-res").textContent = `RES: ${video.videoWidth}x${video.videoHeight}`;
       statusText.textContent = "LIVE CCTV STREAMING";
-      
-      // FIXED: Call the correct sequential loop function
       runDetectionLoop();
     };
 
@@ -53,13 +49,11 @@ async function initCamera() {
   }
 }
 
-// SEQUENTIAL LOOP: Waits for backend to reply before sending the next frame!
 async function runDetectionLoop() {
   if (isStreaming && !video.paused && !video.ended) {
     await processCCTVFrame();
   }
-  // Wait 100ms, then trigger the next cycle automatically
-  setTimeout(runDetectionLoop, 100);
+  setTimeout(runDetectionLoop, 150);
 }
 
 const offscreenCanvas = document.createElement("canvas");
@@ -68,10 +62,10 @@ const offscreenCtx = offscreenCanvas.getContext("2d");
 async function processCCTVFrame() {
   if (video.videoWidth === 0 || video.videoHeight === 0) return;
 
-  // DOWNGRADE to 320px wide to save Render's weak CPU
-  const targetWidth = 320;
+  // UPGRADE: 640px so the AI can actually see small objects
+  const targetWidth = 640;
   const targetHeight = Math.round((video.videoHeight / video.videoWidth) * targetWidth);
-  
+
   offscreenCanvas.width = targetWidth;
   offscreenCanvas.height = targetHeight;
   offscreenCtx.drawImage(video, 0, 0, targetWidth, targetHeight);
@@ -79,9 +73,11 @@ async function processCCTVFrame() {
   scaleX = canvas.width / targetWidth;
   scaleY = canvas.height / targetHeight;
 
-  const frameBase64 = offscreenCanvas.toDataURL("image/jpeg", 0.6);
+  const frameBase64 = offscreenCanvas.toDataURL("image/jpeg", 0.7);
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second allowance for Cold Starts
+  const timeoutId = setTimeout(() => controller.abort(), 90000);
+
+  const requestStartTime = performance.now();
 
   try {
     const response = await fetch(`${BACKEND_URL}/detect_frame`, {
@@ -98,6 +94,8 @@ async function processCCTVFrame() {
       renderBoundingBoxes(data.detections);
       updateTelemetry(data.bin_summary, data.detections, data.has_sharps);
       statusText.textContent = "LIVE CCTV STREAMING";
+    } else {
+      statusText.textContent = `SERVER ERROR: HTTP ${response.status}`;
     }
   } catch (err) {
     if (err.name === "AbortError") {
@@ -107,9 +105,16 @@ async function processCCTVFrame() {
     }
   } finally {
     const now = performance.now();
-    const fps = (1000 / (now - lastFrameTime)).toFixed(1);
-    lastFrameTime = now;
-    hudFps.textContent = `FPS: ${fps}`;
+    const timeTaken = now - requestStartTime;
+    
+    // Fix the 0.0 FPS Illusion on cold starts
+    if (timeTaken > 5000) {
+        hudFps.textContent = `FPS: WAKING UP...`;
+    } else {
+        const fps = (1000 / (now - lastFrameTime)).toFixed(1);
+        hudFps.textContent = `FPS: ${fps}`;
+    }
+    lastFrameTime = performance.now();
   }
 }
 
@@ -118,7 +123,6 @@ function renderBoundingBoxes(detections) {
 
   detections.forEach((item) => {
     const { box, color, class_name, bin, confidence } = item;
-
     const x1 = box.x1 * scaleX;
     const y1 = box.y1 * scaleY;
     const width = box.width * scaleX;
@@ -173,6 +177,7 @@ toggleStreamBtn.addEventListener("click", () => {
   } else {
     toggleStreamBtn.innerHTML = `<i class="fa-solid fa-pause"></i> Pause CCTV`;
     statusText.textContent = "LIVE CCTV STREAMING";
+    lastFrameTime = performance.now();
   }
 });
 
