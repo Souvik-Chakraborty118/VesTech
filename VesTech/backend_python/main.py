@@ -103,8 +103,7 @@ def health_check():
 @app.post("/detect_frame")
 async def detect_frame(payload: FramePayload):
     """
-    Continuous CCTV detection endpoint:
-    Decodes frame from RAM, runs inference, and returns real-time bbox coordinates.
+    Continuous CCTV detection endpoint.
     """
     try:
         # Strip header if present: 'data:image/jpeg;base64,...'
@@ -113,11 +112,13 @@ async def detect_frame(payload: FramePayload):
             encoded_data = encoded_data.split(",")[1]
 
         image_bytes = base64.b64decode(encoded_data)
+        # Load as PIL Image (RGB)
         pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
-        frame_np = np.array(pil_img)
-        img_h, img_w, _ = frame_np.shape
+        img_w, img_h = pil_img.size
 
-        results = model.predict(source=frame_np, conf=0.25, imgsz=640, verbose=False)[0]
+        # Pass PIL image DIRECTLY to YOLO. It handles RGB formatting automatically.
+        # Dropped confidence to 0.15 to better catch webcam motion blur
+        results = model.predict(source=pil_img, conf=0.15, imgsz=640, verbose=False)[0]
 
         detections = []
         bin_counts = {"RED": 0, "YELLOW": 0, "WHITE": 0, "BLUE": 0}
