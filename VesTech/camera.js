@@ -81,7 +81,7 @@ async function processCCTVFrame() {
 
   const frameBase64 = offscreenCanvas.toDataURL("image/jpeg", 0.6);
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 second allowance for Cold Starts
 
   try {
     const response = await fetch(`${BACKEND_URL}/detect_frame`, {
