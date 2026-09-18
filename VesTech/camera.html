@@ -39,7 +39,26 @@
       </div>
     </section>
 
-    <aside class="sidebar-panel">
+   <aside class="sidebar-panel">
+      
+      <!-- CONTROLS MOVED TO TOP -->
+      <div id="status-text" class="status-message">CAMERA READY. CLICK BUTTON TO SCAN.</div>
+
+      <div class="control-actions">
+        <button id="toggle-stream-btn" class="btn primary">
+          <i class="fa-solid fa-camera"></i> Take Photo & Scan
+        </button>
+        <button id="switch-cam-btn" class="btn secondary" title="Flip Camera">
+          <i class="fa-solid fa-camera-rotate"></i>
+        </button>
+      </div>
+      
+      <button onclick="window.print()" class="btn secondary print-btn">
+        <i class="fa-solid fa-file-pdf"></i> Export Compliance Report
+      </button>
+
+      <hr style="border: 1px solid #1f2937; margin: 5px 0;">
+
       <div class="panel-header">
         <h2>Live Telemetry</h2>
         <p class="panel-desc">AI object classification and BMW bin routing.</p>
@@ -75,8 +94,6 @@
           </div>
           <small>Disinfected Glassware</small>
         </div>
-        
-        <!-- NEW: SAFE WASTE FALLBACK BIN -->
         <div class="bin-card green">
           <div class="bin-header">
             <span><span class="dot" style="background:#10b981;"></span> Green Bin</span>
@@ -93,24 +110,6 @@
           <li class="empty-state">Awaiting scan...</li>
         </ul>
       </div>
-
-      <div id="status-text" class="status-message">CAMERA READY. CLICK BUTTON TO SCAN.</div>
-
-      <!-- Controls -->
-      <div class="control-actions">
-        <button id="toggle-stream-btn" class="btn primary">
-          <i class="fa-solid fa-camera"></i> Take Photo & Scan
-        </button>
-        <button id="switch-cam-btn" class="btn secondary" title="Flip Camera">
-          <i class="fa-solid fa-camera-rotate"></i>
-        </button>
-      </div>
-      
-      <!-- Smart Feature: Audit Export -->
-      <button onclick="window.print()" class="btn secondary print-btn">
-        <i class="fa-solid fa-file-pdf"></i> Export Compliance Report
-      </button>
-
     </aside>
   </main>
   
