@@ -16,7 +16,7 @@ torch.set_num_threads(1)
 from ultralytics import YOLO
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "YOUR_GROQ_API_KEY_HERE")
-GROQ_VISION_MODEL = "llama-3.2-11b-vision-preview"
+VISION_MODEL = "llama-3.2-11b-vision-instruct"
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "model")
@@ -67,7 +67,7 @@ def detect_frame(payload: FramePayload):
         pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_w, img_h = pil_img.size
 
-        # YOLO inference dialed to 25% sweet spot
+        # YOLO inference
         with torch.no_grad():
             results = model.predict(source=pil_img, conf=0.25, imgsz=640, device='cpu', verbose=False)[0]
 
@@ -94,7 +94,7 @@ def detect_frame(payload: FramePayload):
                 "box": {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "width": int(x2 - x1), "height": int(y2 - y1)}
             })
 
-       # LAYER 2: HYBRID OPENCV + GROQ FALLBACK
+        # LAYER 2: HYBRID OPENCV + VESTECH AI FALLBACK
         if len(detections) == 0:
             cv_img = cv2.cvtColor(np.array(pil_img), cv2.COLOR_RGB2GRAY)
             blurred = cv2.GaussianBlur(cv_img, (7, 7), 0)
@@ -105,15 +105,20 @@ def detect_frame(payload: FramePayload):
                 contours = sorted(contours, key=cv2.contourArea, reverse=True)
                 screen_area = img_w * img_h
                 
+                objects_processed = 0  # Track how many objects we analyze
+                
                 for c in contours:
+                    if objects_processed >= 3:  # Stop after 3 objects to keep the app fast
+                        break
+                        
                     x, y, w, h = cv2.boundingRect(c)
                     area = w * h
                     
-                    if 8000 < area < (screen_area * 0.40):
+                    # Increased upper limit to 90% to catch large beakers!
+                    if 4000 < area < (screen_area * 0.90):
                         
-                        # 1. Crop and RESIZE for Groq (Prevents payload size limits)
                         cropped_img = pil_img.crop((int(x), int(y), int(x+w), int(y+h)))
-                        cropped_img.thumbnail((300, 300)) # Compress image to ensure API accepts it
+                        cropped_img.thumbnail((300, 300)) 
                         buffered = io.BytesIO()
                         cropped_img.save(buffered, format="JPEG", quality=80)
                         cropped_b64 = base64.b64encode(buffered.getvalue()).decode('utf-8')
@@ -121,17 +126,15 @@ def detect_frame(payload: FramePayload):
                         final_bin = "GREEN"
                         label_name = "Unknown Safe Waste"
                         
-                        # 2. Interrogate Groq API
                         if GROQ_API_KEY and GROQ_API_KEY != "YOUR_GROQ_API_KEY_HERE":
                             try:
                                 headers = {
                                     "Authorization": f"Bearer {GROQ_API_KEY}",
                                     "Content-Type": "application/json"
                                 }
-                                prompt = "Is this medical item a RED (plastic/glove), YELLOW (biohazard/blood), WHITE (sharp syringe), BLUE (glassware), or GREEN (general) bin item? Reply ONLY with the color word."
-                                # Updated Payload formatting to satisfy Groq's strict API rules
-                                groq_payload = {
-                                    "model": "qwen/qwen3.8-27b",  # <-- CHANGED: Removed '-preview', added '-instruct'
+                                prompt = "Is this medical item a RED (plastic/glove), YELLOW (biohazard/blood), WHITE (sharp syringe/broken glass), BLUE (intact glassware), or GREEN (general) bin item? Reply ONLY with the color word."
+                                payload = {
+                                    "model": "qwen/qwen3.8-27b",
                                     "messages": [
                                         {
                                             "role": "user",
@@ -142,47 +145,43 @@ def detect_frame(payload: FramePayload):
                                         }
                                     ],
                                     "temperature": 0.1,
-                                    "max_tokens": 150
+                                    "max_tokens": 50
                                 }
-                                resp = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=groq_payload, timeout=12)
+                                
+                                resp = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=8)
                                 
                                 if resp.status_code == 200:
                                     reply = resp.json()["choices"][0]["message"]["content"].strip().upper()
                                     if "BLUE" in reply or "GLASS" in reply:
                                         final_bin = "BLUE"
-                                        label_name = "Groq: Glassware"
+                                        label_name = "VesTech AI: Glassware"
                                     elif "RED" in reply or "GLOVE" in reply:
                                         final_bin = "RED"
-                                        label_name = "Groq: Plastics"
+                                        label_name = "VesTech AI: Plastics"
                                     elif "YELLOW" in reply or "BLOOD" in reply:
                                         final_bin = "YELLOW"
-                                        label_name = "Groq: Biohazard"
+                                        label_name = "VesTech AI: Biohazard"
                                     elif "WHITE" in reply or "SHARP" in reply or "SYRINGE" in reply:
                                         final_bin = "WHITE"
-                                        label_name = "Groq: Sharps"
+                                        label_name = "VesTech AI: Sharps"
                                     else:
-                                        label_name = "Groq: General Waste"
+                                        label_name = "VesTech AI: General Waste"
                                 else:
-                                    # THIS WILL PRINT THE EXACT API COMPLAINT IN YOUR RENDER LOGS
-                                    print(f"GROQ 400 ERROR DETAILS: {resp.text}")
-                                    label_name = f"Groq Error: HTTP {resp.status_code}"
+                                    label_name = f"VesTech AI Error: {resp.status_code}"
                             except Exception as e:
-                                # This will print Python connection errors on your app screen!
-                                print(f"Groq API Error: {e}")
-                                label_name = f"API Timeout/Err"
+                                label_name = f"API Timeout"
                         else:
                             label_name = "API Key Missing!"
                             
-                        # Append the final result ONCE and break the loop
                         detections.append({
                             "class_name": label_name,
-                            "confidence": 0.99, # High confidence mark indicating LLM override
+                            "confidence": 0.99,
                             "bin": final_bin,
                             "color": COLOR_MAP.get(final_bin, "#10B981"),
                             "box": {"x1": int(x), "y1": int(y), "x2": int(x+w), "y2": int(y+h), "width": int(w), "height": int(h)}
                         })
                         bin_counts[final_bin] += 1
-                        break 
+                        objects_processed += 1
 
         del pil_img
         del image_bytes
