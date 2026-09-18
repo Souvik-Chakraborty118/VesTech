@@ -144,10 +144,6 @@ def detect_frame(payload: FramePayload):
                                     "temperature": 0.1,
                                     "max_tokens": 150
                                 }
-                                    "temperature": 0.1,  # Changed from 0.0 to 0.1 (Some APIs reject absolute zero)
-                                    "max_tokens": 150    # Increased from 10 to 150 (Prevents truncation errors)
-                                }
-                                
                                 resp = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=groq_payload, timeout=12)
                                 
                                 if resp.status_code == 200:
