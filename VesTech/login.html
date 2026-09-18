@@ -40,14 +40,12 @@
                     <input type="email" id="loginEmail" placeholder="Enter your email" required>
                 </div>
                 
-                <div class="input-group">
+                <!-- PASSWORD FIELD WITH INLINE EYE ICON FIX -->
+                <div class="input-group" style="position: relative;">
                     <label>Password</label>
                     <span class="icon">🔒</span>
-                    <!-- Password Wrapper with Eye Icon -->
-                    <div class="password-wrapper">
-                        <input type="password" id="loginPass" placeholder="••••••••••••" required>
-                        <i class="fa-solid fa-eye toggle-password" id="togglePassword"></i>
-                    </div>
+                    <input type="password" id="loginPass" placeholder="••••••••••••" required style="padding-right: 40px;">
+                    <i class="fa-solid fa-eye toggle-password" id="togglePassword" style="position: absolute; right: 15px; top: 38px; cursor: pointer; color: #94a3b8;"></i>
                 </div>
                 
                 <div class="input-group">
