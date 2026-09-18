@@ -131,7 +131,7 @@ def detect_frame(payload: FramePayload):
                                 prompt = "Is this medical item a RED (plastic/glove), YELLOW (biohazard/blood), WHITE (sharp syringe), BLUE (glassware), or GREEN (general) bin item? Reply ONLY with the color word."
                                 # Updated Payload formatting to satisfy Groq's strict API rules
                                 groq_payload = {
-                                    "model": "llama-3.2-11b-vision-preview",
+                                    "model": "llama-3.2-11b-vision-instruct",  # <-- CHANGED: Removed '-preview', added '-instruct'
                                     "messages": [
                                         {
                                             "role": "user",
@@ -141,6 +141,9 @@ def detect_frame(payload: FramePayload):
                                             ]
                                         }
                                     ],
+                                    "temperature": 0.1,
+                                    "max_tokens": 150
+                                }
                                     "temperature": 0.1,  # Changed from 0.0 to 0.1 (Some APIs reject absolute zero)
                                     "max_tokens": 150    # Increased from 10 to 150 (Prevents truncation errors)
                                 }
