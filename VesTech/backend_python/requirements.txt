@@ -1,8 +1,20 @@
+# --- RENDER FREE TIER OPTIMIZATIONS ---
+# 1. Force Pip to download the CPU-only version of PyTorch (Saves ~2GB of space and RAM)
+--extra-index-url https://download.pytorch.org/whl/cpu
+
+# Core AI Libraries
+torch
+torchvision
+ultralytics
+
+# Web Server & API
 fastapi
 uvicorn
-ultralytics
-opencv-python-headless
-pillow
-numpy
 pydantic
 python-multipart
+
+# Image Processing
+# 2. Force Headless OpenCV (Prevents 'libGL.so.1' crashes on cloud servers)
+opencv-python-headless
+Pillow
+numpy
