@@ -129,6 +129,7 @@ def detect_frame(payload: FramePayload):
                                     "Content-Type": "application/json"
                                 }
                                 prompt = "Is this medical item a RED (plastic/glove), YELLOW (biohazard/blood), WHITE (sharp syringe), BLUE (glassware), or GREEN (general) bin item? Reply ONLY with the color word."
+                                # Updated Payload formatting to satisfy Groq's strict API rules
                                 groq_payload = {
                                     "model": "llama-3.2-11b-vision-preview",
                                     "messages": [
@@ -140,11 +141,10 @@ def detect_frame(payload: FramePayload):
                                             ]
                                         }
                                     ],
-                                    "temperature": 0.0,
-                                    "max_tokens": 10
+                                    "temperature": 0.1,  # Changed from 0.0 to 0.1 (Some APIs reject absolute zero)
+                                    "max_tokens": 150    # Increased from 10 to 150 (Prevents truncation errors)
                                 }
                                 
-                                # Increased timeout and added error surfacing
                                 resp = requests.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=groq_payload, timeout=12)
                                 
                                 if resp.status_code == 200:
@@ -164,7 +164,8 @@ def detect_frame(payload: FramePayload):
                                     else:
                                         label_name = "Groq: General Waste"
                                 else:
-                                    # This will print the exact HTTP error on your app screen!
+                                    # THIS WILL PRINT THE EXACT API COMPLAINT IN YOUR RENDER LOGS
+                                    print(f"GROQ 400 ERROR DETAILS: {resp.text}")
                                     label_name = f"Groq Error: HTTP {resp.status_code}"
                             except Exception as e:
                                 # This will print Python connection errors on your app screen!
