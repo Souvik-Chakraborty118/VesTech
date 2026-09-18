@@ -16,3 +16,4 @@ python-multipart
 opencv-python-headless
 Pillow
 numpy
+requests==2.31.0
