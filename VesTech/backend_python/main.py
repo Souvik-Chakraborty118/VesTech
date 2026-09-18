@@ -3,53 +3,41 @@ import io
 import base64
 import gc
 import numpy as np
-import cv2
 from PIL import Image
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-
-# --- EXTREME RAM & CPU OPTIMIZATIONS FOR RENDER FREE TIER ---
 import torch
-torch.set_num_threads(1)         # Prevents CPU thread exhaustion
-torch.set_grad_enabled(False)    # Disables memory-heavy gradient tracking (Saves ~150MB RAM)
-# ------------------------------------------------------------
+
+torch.set_num_threads(1)
 
 from ultralytics import YOLO
 
-app = FastAPI(title="VesTech BinGo Live CCTV Detection Server")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+app = FastAPI(title="VesTech BinGo Live CCTV")
+app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
 
 MODEL_CANDIDATES = [
-    os.path.join(os.path.dirname(__file__), "model", "best.pt"),
     os.path.join(os.path.dirname(__file__), "model", "medical_waste_yolov8_best.pt"),
-    os.path.join(os.path.dirname(__file__), "best.pt"),
+    os.path.join(os.path.dirname(__file__), "model", "best.pt"),
     "best.pt"
 ]
 
 model_path = next((p for p in MODEL_CANDIDATES if os.path.exists(p)), None)
 if not model_path:
-    model_path = os.path.join(os.path.dirname(__file__), "model", "medical_waste_yolov8_best.pt")
+    model_path = "best.pt"
 
 print(f">>> Loading YOLO model from: {model_path}")
 model = YOLO(model_path)
 
 BIN_RULES = {
-    "IV_Tube": {"bin": "RED", "color": "#EF4444", "category": "Contaminated Recyclable Plastics", "action": "Route to Autoclave"},
-    "Medical_Glove": {"bin": "RED", "color": "#EF4444", "category": "Contaminated Recyclable Plastics", "action": "Route to Autoclave"},
-    "Blood_Bag": {"bin": "YELLOW", "color": "#FACC15", "category": "Infectious Biohazard", "action": "Incineration"},
-    "Blood_Soiled": {"bin": "YELLOW", "color": "#FACC15", "category": "Infectious Biohazard", "action": "Incineration"},
-    "Anatomical_Tissue": {"bin": "YELLOW", "color": "#FACC15", "category": "Pathological Waste", "action": "Incineration"},
-    "Syringe_Sharps": {"bin": "WHITE", "color": "#F8FAFC", "category": "Puncture-Proof Sharps", "action": "Sharps Pit"},
-    "Glass_Ampoule": {"bin": "BLUE", "color": "#3B82F6", "category": "Disinfected Glassware", "action": "Decontamination"},
-    "Broken_Glass": {"bin": "BLUE", "color": "#3B82F6", "category": "Disinfected Glassware", "action": "Decontamination"}
+    "IV_Tube": {"bin": "RED", "color": "#EF4444", "category": "Contaminated Plastics", "action": "Autoclave"},
+    "Medical_Glove": {"bin": "RED", "color": "#EF4444", "category": "Contaminated Plastics", "action": "Autoclave"},
+    "Blood_Bag": {"bin": "YELLOW", "color": "#FACC15", "category": "Biohazard", "action": "Incineration"},
+    "Blood_Soiled": {"bin": "YELLOW", "color": "#FACC15", "category": "Biohazard", "action": "Incineration"},
+    "Anatomical_Tissue": {"bin": "YELLOW", "color": "#FACC15", "category": "Pathological", "action": "Incineration"},
+    "Syringe_Sharps": {"bin": "WHITE", "color": "#F8FAFC", "category": "Sharps", "action": "Sharps Pit"},
+    "Glass_Ampoule": {"bin": "BLUE", "color": "#3B82F6", "category": "Glassware", "action": "Decontamination"},
+    "Broken_Glass": {"bin": "BLUE", "color": "#3B82F6", "category": "Glassware", "action": "Decontamination"}
 }
 
 class FramePayload(BaseModel):
@@ -57,10 +45,8 @@ class FramePayload(BaseModel):
 
 @app.get("/")
 def health_check():
-    return {"status": "online", "service": "VesTech BinGo CCTV Backend"}
+    return {"status": "online"}
 
-# NOTICE: Removed 'async def'. Using standard 'def' forces FastAPI to run this heavy 
-# AI task in a background threadpool so it DOES NOT freeze the web server.
 @app.post("/detect_frame")
 def detect_frame(payload: FramePayload):
     try:
@@ -72,8 +58,9 @@ def detect_frame(payload: FramePayload):
         pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_w, img_h = pil_img.size
 
-        # Run inference at 320px for high speed
-        results = model.predict(source=pil_img, conf=0.15, imgsz=320, device='cpu', verbose=False)[0]
+        # RAM SAVER + RESOLUTION BUMP + CONFIDENCE DROP
+        with torch.no_grad():
+            results = model.predict(source=pil_img, conf=0.10, imgsz=640, device='cpu', verbose=False)[0]
 
         detections = []
         bin_counts = {"RED": 0, "YELLOW": 0, "WHITE": 0, "BLUE": 0}
@@ -84,10 +71,7 @@ def detect_frame(payload: FramePayload):
             conf = float(box.conf[0])
             x1, y1, x2, y2 = box.xyxy[0].tolist()
 
-            rule = BIN_RULES.get(cls_name, {
-                "bin": "GENERAL", "color": "#10B981", "category": "General", "action": "Bin"
-            })
-
+            rule = BIN_RULES.get(cls_name, {"bin": "GENERAL", "color": "#10B981", "category": "General", "action": "Bin"})
             bin_name = rule["bin"]
             if bin_name in bin_counts:
                 bin_counts[bin_name] += 1
@@ -97,13 +81,9 @@ def detect_frame(payload: FramePayload):
                 "confidence": round(conf, 2),
                 "bin": bin_name,
                 "color": rule["color"],
-                "box": {
-                    "x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2),
-                    "width": int(x2 - x1), "height": int(y2 - y1)
-                }
+                "box": {"x1": int(x1), "y1": int(y1), "x2": int(x2), "y2": int(y2), "width": int(x2 - x1), "height": int(y2 - y1)}
             })
 
-        # FORCE GARBAGE COLLECTION: Instantly dump memory so Render doesn't crash
         del pil_img
         del image_bytes
         del results
@@ -118,4 +98,6 @@ def detect_frame(payload: FramePayload):
         }
 
     except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
