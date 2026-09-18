@@ -1,4 +1,5 @@
 package com.vestech.bingo;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,8 +31,8 @@ public class AuthController {
         }
         return ResponseEntity.ok("Login successful");
     }
-}
-@PutMapping("/update")
+
+    @PutMapping("/update")
     public ResponseEntity<String> updateUser(@RequestBody User updatedUser) {
         Optional<User> existingUserOpt = userRepository.findByEmail(updatedUser.getEmail());
         
@@ -52,3 +53,4 @@ public class AuthController {
         userRepository.save(existingUser);
         return ResponseEntity.ok("Profile updated in Neon SQL successfully.");
     }
+}
