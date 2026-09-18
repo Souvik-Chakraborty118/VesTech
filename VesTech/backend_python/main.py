@@ -2,7 +2,6 @@ import os
 import io
 import base64
 import gc
-import zipfile
 import numpy as np
 import cv2
 from PIL import Image
@@ -11,35 +10,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import torch
 
-# Prevent Render Free Tier from crashing
 torch.set_num_threads(1)
 
 from ultralytics import YOLO
 
 # ==========================================
-# 1. AUTO-UNZIP & DEEP SEARCH LOGIC
+# 1. LOAD THE MODEL DIRECTLY
 # ==========================================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = os.path.join(BASE_DIR, "model")
-ZIP_PATH = os.path.join(MODEL_DIR, "best.pt.zip")
 
-# Unzip if the zip file exists
-if os.path.exists(ZIP_PATH):
-    print(f">>> Extracting model from {ZIP_PATH}...")
-    with zipfile.ZipFile(ZIP_PATH, 'r') as zip_ref:
-        zip_ref.extractall(MODEL_DIR)
-    print(">>> Extraction complete. Hunting for best.pt...")
+# Because you named the raw PyTorch file "best.pt.zip", we will just tell YOLO to read that exact file.
+PT_PATH = os.path.join(MODEL_DIR, "best.pt.zip")
 
-# Search every folder inside MODEL_DIR to find exactly where best.pt landed
-PT_PATH = None
-for root, dirs, files in os.walk(MODEL_DIR):
-    if "best.pt" in files:
-        PT_PATH = os.path.join(root, "best.pt")
-        break
-
-if not PT_PATH:
-    print("CRITICAL WARNING: best.pt not found anywhere inside the model directory!")
-    PT_PATH = "best.pt"  # Failsafe fallback
+if not os.path.exists(PT_PATH):
+    print(f"CRITICAL WARNING: Could not find {PT_PATH}. Make sure it is uploaded exactly as 'best.pt.zip' inside the 'model' folder.")
+    PT_PATH = "best.pt" # Failsafe
 
 print(f">>> Successfully located and loading YOLO model from: {PT_PATH}")
 model = YOLO(PT_PATH)
@@ -79,7 +65,6 @@ def detect_frame(payload: FramePayload):
         pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_w, img_h = pil_img.size
 
-        # High-res inference for photo click mode
         with torch.no_grad():
             results = model.predict(source=pil_img, conf=0.10, imgsz=640, device='cpu', verbose=False)[0]
 
