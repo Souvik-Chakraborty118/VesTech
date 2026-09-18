@@ -1,6 +1,7 @@
 import os
 import io
 import base64
+import gc
 import numpy as np
 import cv2
 from PIL import Image
@@ -8,10 +9,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-# --- CRITICAL RENDER FREE TIER OPTIMIZATIONS ---
+# --- EXTREME RAM & CPU OPTIMIZATIONS FOR RENDER FREE TIER ---
 import torch
-torch.set_num_threads(1)  # Prevents CPU thread exhaustion on Render
-# -----------------------------------------------
+torch.set_num_threads(1)         # Prevents CPU thread exhaustion
+torch.set_grad_enabled(False)    # Disables memory-heavy gradient tracking (Saves ~150MB RAM)
+# ------------------------------------------------------------
 
 from ultralytics import YOLO
 
@@ -57,8 +59,10 @@ class FramePayload(BaseModel):
 def health_check():
     return {"status": "online", "service": "VesTech BinGo CCTV Backend"}
 
+# NOTICE: Removed 'async def'. Using standard 'def' forces FastAPI to run this heavy 
+# AI task in a background threadpool so it DOES NOT freeze the web server.
 @app.post("/detect_frame")
-async def detect_frame(payload: FramePayload):
+def detect_frame(payload: FramePayload):
     try:
         encoded_data = payload.image
         if "," in encoded_data:
@@ -68,7 +72,7 @@ async def detect_frame(payload: FramePayload):
         pil_img = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         img_w, img_h = pil_img.size
 
-        # EXTREME OPTIMIZATION: imgsz=320, cpu execution to save RAM
+        # Run inference at 320px for high speed
         results = model.predict(source=pil_img, conf=0.15, imgsz=320, device='cpu', verbose=False)[0]
 
         detections = []
@@ -98,6 +102,12 @@ async def detect_frame(payload: FramePayload):
                     "width": int(x2 - x1), "height": int(y2 - y1)
                 }
             })
+
+        # FORCE GARBAGE COLLECTION: Instantly dump memory so Render doesn't crash
+        del pil_img
+        del image_bytes
+        del results
+        gc.collect()
 
         return {
             "success": True,
