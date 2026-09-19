@@ -32,7 +32,7 @@ body {
 .logo-img {
   height: 38px;
   width: 38px;
-  border-radius: 8px;
+  border-radius: 0;
   object-fit: cover;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Gives the logo a nice subtle pop */
 }
