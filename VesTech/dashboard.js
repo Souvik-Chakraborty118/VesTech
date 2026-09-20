@@ -6,7 +6,7 @@ if (sessionStorage.getItem('isAuthenticated') !== 'true') {
 function updateBinCapacity(binPrefix, currentGrams) {
     const maxGrams = 3000;
     const percentage = Math.min((currentGrams / maxGrams) * 100, 100);
-    
+    const currentKg = (currentGrams / 1000).toFixed(1);
     document.getElementById(`${binPrefix}-weight`).innerHTML = `${currentGrams}g <span class="subtext">/ 3KG max</span>`;
     
     const bar = document.getElementById(`${binPrefix}-bar`);
