@@ -6,8 +6,12 @@ if (sessionStorage.getItem('isAuthenticated') !== 'true') {
 function updateBinCapacity(binPrefix, currentGrams) {
     const maxGrams = 3000;
     const percentage = Math.min((currentGrams / maxGrams) * 100, 100);
-    const currentKg = (currentGrams / 1000).toFixed(1);
-    document.getElementById(`${binPrefix}-weight`).innerHTML = `${currentGrams}g <span class="subtext">/ 3KG max</span>`;
+    
+    // Convert to kg with 2 decimal places (2990g -> 2.99 kg)
+    const currentKg = (currentGrams / 1000).toFixed(2);
+    
+    // Inject the new currentKg variable into the HTML
+    document.getElementById(`${binPrefix}-weight`).innerHTML = `${currentKg} kg <span class="subtext">/ 3KG max</span>`;
     
     const bar = document.getElementById(`${binPrefix}-bar`);
     const alertText = document.getElementById(`${binPrefix}-alert`);
@@ -34,7 +38,7 @@ function updateBinCapacity(binPrefix, currentGrams) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Set initial bin weights
+    //Set initial bin weights
     updateBinCapacity('yellow', 560);   
     updateBinCapacity('red', 2990);     
     updateBinCapacity('white', 2500);   
@@ -82,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
         pickupModal.classList.remove('active');
     });
 
-    // Close Modals if user clicks outside of them
+    //Close Modals if user clicks outside of them
     window.addEventListener('click', (e) => {
         if (e.target === historyModal) historyModal.classList.remove('active');
         if (e.target === pickupModal) pickupModal.classList.remove('active');
