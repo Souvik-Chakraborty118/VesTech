@@ -26,6 +26,8 @@ body {
 .nav-links a { text-decoration: none; color: #64748b; font-weight: 600; font-size: 0.95rem; padding-bottom: 5px; }
 .auth-group { display: flex; align-items: center; gap: 20px; }
 .text-link { text-decoration: none; color: #1e293b; font-weight: 600; font-size: 0.95rem; }
+.btn-teal { background: #0d9488; color: white; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.95rem; border: none; cursor: pointer; transition: 0.2s;}
+.btn-teal:hover { background: #0f766e; }
 
 /* Dashboard Teal Banner matching */
 .cctv-header-banner {
