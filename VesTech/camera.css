@@ -341,3 +341,7 @@ body {
   top: 0;
   left: 0;
 }
+.log-entry[data-bin="WHITE"] .score-text {
+  color: #000000 !important;
+  font-weight: bold;
+}
