@@ -203,9 +203,9 @@ function updateTelemetry(summary, detections, hasSharps) {
     detectionList.innerHTML = `<li class="empty-state">No medical waste detected.</li>`;
   } else {
     detectionList.innerHTML = detections.slice(0, 5).map((d) => `
-        <li class="log-entry" style="border-left: 4px solid ${d.color};">
+        <li class="log-entry" data-bin="${d.bin}" style="border-left: 4px solid ${d.color};">
           <span><strong>${d.class_name}</strong> &rarr; ${d.bin} Bin</span>
-          <span style="color: ${d.color};">${(d.confidence * 100).toFixed(0)}%</span>
+          <span class="score-text" style="color: ${d.color};">${(d.confidence * 100).toFixed(0)}%</span>
         </li>
       `).join("");
   }
